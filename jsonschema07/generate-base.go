@@ -48,7 +48,7 @@ import (
 	"encoding/base64"
 )
 
-func baseSchemaBytes() ([]byte, error){
+func baseCombinedBytes() ([]byte, error){
 	return base64.StdEncoding.DecodeString(
 `)
 	write(f, "`")

@@ -120,9 +120,9 @@ func (object *SchemaNumber) nodeValue() *yaml.Node {
 	}
 }
 
-func (object *Schema) nodeValue() *yaml.Node {
-	if object.Absolute != nil {
-		return object.Absolute.nodeValue()
+func (object *Combined) nodeValue() *yaml.Node {
+	if object.Schema != nil {
+		return object.Schema.nodeValue()
 	} else if object.Boolean != nil {
 		return nodeForBoolean(*object.Boolean)
 	} else {
@@ -138,7 +138,7 @@ func nodeForStringArray(array []string) *yaml.Node {
 	return nodeForSequence(content)
 }
 
-func nodeForSchemaArray(array []*Schema) *yaml.Node {
+func nodeForCombinedArray(array []*Combined) *yaml.Node {
 	content := make([]*yaml.Node, 0)
 	for _, item := range array {
 		content = append(content, item.nodeValue())
@@ -156,9 +156,9 @@ func (object *StringOrStringArray) nodeValue() *yaml.Node {
 	}
 }
 
-func (object *SchemaOrStringArray) nodeValue() *yaml.Node {
-	if object.Schema != nil {
-		return object.Schema.nodeValue()
+func (object *CombinedOrStringArray) nodeValue() *yaml.Node {
+	if object.Combined != nil {
+		return object.Combined.nodeValue()
 	} else if object.StringArray != nil {
 		return nodeForStringArray(*(object.StringArray))
 	} else {
@@ -166,11 +166,11 @@ func (object *SchemaOrStringArray) nodeValue() *yaml.Node {
 	}
 }
 
-func (object *SchemaOrSchemaArray) nodeValue() *yaml.Node {
-	if object.Schema != nil {
-		return object.Schema.nodeValue()
-	} else if object.SchemaArray != nil {
-		return nodeForSchemaArray(*(object.SchemaArray))
+func (object *CombinedOrCombinedArray) nodeValue() *yaml.Node {
+	if object.Combined != nil {
+		return object.Combined.nodeValue()
+	} else if object.CombinedArray != nil {
+		return nodeForCombinedArray(*(object.CombinedArray))
 	} else {
 		return nil
 	}
@@ -186,7 +186,7 @@ func (object *SchemaEnumValue) nodeValue() *yaml.Node {
 	}
 }
 
-func nodeForNamedSchemaArray(array *[]*NamedSchema) *yaml.Node {
+func nodeForNamedCombinedArray(array *[]*NamedCombined) *yaml.Node {
 	content := make([]*yaml.Node, 0)
 	for _, pair := range *(array) {
 		content = appendPair(content, pair.Name, pair.Value.nodeValue())
@@ -194,7 +194,7 @@ func nodeForNamedSchemaArray(array *[]*NamedSchema) *yaml.Node {
 	return nodeForMapping(content)
 }
 
-func nodeForNamedSchemaOrStringArray(array *[]*NamedSchemaOrStringArray) *yaml.Node {
+func nodeForNamedCombinedOrStringArray(array *[]*NamedCombinedOrStringArray) *yaml.Node {
 	content := make([]*yaml.Node, 0)
 	for _, pair := range *(array) {
 		content = appendPair(content, pair.Name, pair.Value.nodeValue())
@@ -202,7 +202,7 @@ func nodeForNamedSchemaOrStringArray(array *[]*NamedSchemaOrStringArray) *yaml.N
 	return nodeForMapping(content)
 }
 
-func nodeForSchemaEnumArray(array *[]SchemaEnumValue) *yaml.Node {
+func nodeForCombinedEnumArray(array *[]SchemaEnumValue) *yaml.Node {
 	content := make([]*yaml.Node, 0)
 	for _, item := range *array {
 		content = append(content, item.nodeValue())
@@ -338,160 +338,160 @@ func appendPair(nodes []*yaml.Node, name string, value *yaml.Node) []*yaml.Node 
 	return nodes
 }
 
-func (absolute *Absolute) nodeValue() *yaml.Node {
+func (schema *Schema) nodeValue() *yaml.Node {
 	n := &yaml.Node{Kind: yaml.MappingNode}
 	content := make([]*yaml.Node, 0)
-	if absolute.ID != nil {
-		switch strings.TrimSuffix(*absolute.Schema, "#") {
+	if schema.ID != nil {
+		switch strings.TrimSuffix(*schema.Schema, "#") {
 		case "http://json-schema.org/draft-07/schema":
 			fallthrough
 		case "#":
 			fallthrough
 		default:
-			content = appendPair(content, "$id", nodeForString(*absolute.ID))
+			content = appendPair(content, "$id", nodeForString(*schema.ID))
 		}
 	}
-	if absolute.Schema != nil {
-		content = appendPair(content, "$schema", nodeForString(*absolute.Schema))
+	if schema.Schema != nil {
+		content = appendPair(content, "$schema", nodeForString(*schema.Schema))
 	}
-	if absolute.Ref != nil {
-		content = appendPair(content, "$ref", nodeForString(*absolute.Ref))
+	if schema.Ref != nil {
+		content = appendPair(content, "$ref", nodeForString(*schema.Ref))
 	}
-	if absolute.Comment != nil {
-		content = appendPair(content, "$comment", nodeForString(*absolute.Comment))
+	if schema.Comment != nil {
+		content = appendPair(content, "$comment", nodeForString(*schema.Comment))
 	}
-	if absolute.Title != nil {
-		content = appendPair(content, "title", nodeForString(*absolute.Title))
+	if schema.Title != nil {
+		content = appendPair(content, "title", nodeForString(*schema.Title))
 	}
-	if absolute.Description != nil {
-		content = appendPair(content, "description", nodeForString(*absolute.Description))
-	}
-
-	if absolute.Default != nil {
-		content = appendPair(content, "default", absolute.Default)
-	}
-	if absolute.ReadOnly != nil && *absolute.ReadOnly {
-		content = appendPair(content, "readOnly", nodeForBoolean(*absolute.ReadOnly))
-	}
-	if absolute.WriteOnly != nil && *absolute.WriteOnly {
-		content = appendPair(content, "writeOnly", nodeForBoolean(*absolute.WriteOnly))
-	}
-	if absolute.Examples != nil {
-		content = appendPair(content, "examples", nodeForSchemaArray(*absolute.Examples))
+	if schema.Description != nil {
+		content = appendPair(content, "description", nodeForString(*schema.Description))
 	}
 
-	if absolute.MultipleOf != nil {
-		content = appendPair(content, "multipleOf", absolute.MultipleOf.nodeValue())
+	if schema.Default != nil {
+		content = appendPair(content, "default", schema.Default)
 	}
-	if absolute.Maximum != nil {
-		content = appendPair(content, "maximum", absolute.Maximum.nodeValue())
+	if schema.ReadOnly != nil && *schema.ReadOnly {
+		content = appendPair(content, "readOnly", nodeForBoolean(*schema.ReadOnly))
 	}
-	if absolute.ExclusiveMaximum != nil {
-		content = appendPair(content, "exclusiveMaximum", absolute.ExclusiveMaximum.nodeValue())
+	if schema.WriteOnly != nil && *schema.WriteOnly {
+		content = appendPair(content, "writeOnly", nodeForBoolean(*schema.WriteOnly))
 	}
-	if absolute.Minimum != nil {
-		content = appendPair(content, "minimum", absolute.Minimum.nodeValue())
-	}
-	if absolute.ExclusiveMinimum != nil {
-		content = appendPair(content, "exclusiveMinimum", absolute.ExclusiveMinimum.nodeValue())
+	if schema.Examples != nil {
+		content = appendPair(content, "examples", nodeForCombinedArray(*schema.Examples))
 	}
 
-	if absolute.MaxLength != nil {
-		content = appendPair(content, "maxLength", nodeForInt64(*absolute.MaxLength))
+	if schema.MultipleOf != nil {
+		content = appendPair(content, "multipleOf", schema.MultipleOf.nodeValue())
 	}
-	if absolute.MinLength != nil {
-		content = appendPair(content, "minLength", nodeForInt64(*absolute.MinLength))
+	if schema.Maximum != nil {
+		content = appendPair(content, "maximum", schema.Maximum.nodeValue())
 	}
-	if absolute.Pattern != nil {
-		content = appendPair(content, "pattern", nodeForString(*absolute.Pattern))
+	if schema.ExclusiveMaximum != nil {
+		content = appendPair(content, "exclusiveMaximum", schema.ExclusiveMaximum.nodeValue())
 	}
-
-	if absolute.AdditionalItems != nil {
-		content = appendPair(content, "additionalItems", absolute.AdditionalItems.nodeValue())
+	if schema.Minimum != nil {
+		content = appendPair(content, "minimum", schema.Minimum.nodeValue())
 	}
-	if absolute.Items != nil {
-		content = appendPair(content, "items", absolute.Items.nodeValue())
-	}
-	if absolute.MaxItems != nil {
-		content = appendPair(content, "maxItems", nodeForInt64(*absolute.MaxItems))
-	}
-	if absolute.MinItems != nil {
-		content = appendPair(content, "minItems", nodeForInt64(*absolute.MinItems))
-	}
-	if absolute.UniqueItems != nil {
-		content = appendPair(content, "uniqueItems", nodeForBoolean(*absolute.UniqueItems))
+	if schema.ExclusiveMinimum != nil {
+		content = appendPair(content, "exclusiveMinimum", schema.ExclusiveMinimum.nodeValue())
 	}
 
-	if absolute.Contains != nil {
-		content = appendPair(content, "contains", absolute.Contains.nodeValue())
+	if schema.MaxLength != nil {
+		content = appendPair(content, "maxLength", nodeForInt64(*schema.MaxLength))
 	}
-	if absolute.MaxProperties != nil {
-		content = appendPair(content, "maxProperties", nodeForInt64(*absolute.MaxProperties))
+	if schema.MinLength != nil {
+		content = appendPair(content, "minLength", nodeForInt64(*schema.MinLength))
 	}
-	if absolute.MinProperties != nil {
-		content = appendPair(content, "minProperties", nodeForInt64(*absolute.MinProperties))
-	}
-	if absolute.Required != nil {
-		content = appendPair(content, "required", nodeForStringArray(*absolute.Required))
-	}
-	if absolute.AdditionalProperties != nil {
-		content = appendPair(content, "additionalProperties", absolute.AdditionalProperties.nodeValue())
-	}
-	if absolute.Definitions != nil {
-		content = appendPair(content, "definitions", nodeForNamedSchemaArray(absolute.Definitions))
-	}
-	if absolute.Properties != nil {
-		content = appendPair(content, "properties", nodeForNamedSchemaArray(absolute.Properties))
-	}
-	if absolute.PatternProperties != nil {
-		content = appendPair(content, "patternProperties", nodeForNamedSchemaArray(absolute.PatternProperties))
-	}
-	if absolute.Dependencies != nil {
-		content = appendPair(content, "dependencies", nodeForNamedSchemaOrStringArray(absolute.Dependencies))
-	}
-	if absolute.PropertyNames != nil {
-		content = appendPair(content, "propertyNames", absolute.PropertyNames.nodeValue())
+	if schema.Pattern != nil {
+		content = appendPair(content, "pattern", nodeForString(*schema.Pattern))
 	}
 
-	if absolute.Const != nil {
-		content = appendPair(content, "const", absolute.Const)
+	if schema.AdditionalItems != nil {
+		content = appendPair(content, "additionalItems", schema.AdditionalItems.nodeValue())
 	}
-	if absolute.Enumeration != nil {
-		content = appendPair(content, "enum", nodeForSchemaEnumArray(absolute.Enumeration))
+	if schema.Items != nil {
+		content = appendPair(content, "items", schema.Items.nodeValue())
 	}
-	if absolute.Type != nil {
-		content = appendPair(content, "type", absolute.Type.nodeValue())
+	if schema.MaxItems != nil {
+		content = appendPair(content, "maxItems", nodeForInt64(*schema.MaxItems))
 	}
-	if absolute.Format != nil {
-		content = appendPair(content, "format", nodeForString(*absolute.Format))
+	if schema.MinItems != nil {
+		content = appendPair(content, "minItems", nodeForInt64(*schema.MinItems))
 	}
-	if absolute.ContentMediaType != nil {
-		content = appendPair(content, "contentMediaType", nodeForString(*absolute.ContentMediaType))
-	}
-	if absolute.ContentEncoding != nil {
-		content = appendPair(content, "contentEncoding", nodeForString(*absolute.ContentEncoding))
+	if schema.UniqueItems != nil {
+		content = appendPair(content, "uniqueItems", nodeForBoolean(*schema.UniqueItems))
 	}
 
-	if absolute.If != nil {
-		content = appendPair(content, "if", absolute.If.nodeValue())
+	if schema.Contains != nil {
+		content = appendPair(content, "contains", schema.Contains.nodeValue())
 	}
-	if absolute.Then != nil {
-		content = appendPair(content, "then", absolute.Then.nodeValue())
+	if schema.MaxProperties != nil {
+		content = appendPair(content, "maxProperties", nodeForInt64(*schema.MaxProperties))
 	}
-	if absolute.Else != nil {
-		content = appendPair(content, "else", absolute.Else.nodeValue())
+	if schema.MinProperties != nil {
+		content = appendPair(content, "minProperties", nodeForInt64(*schema.MinProperties))
 	}
-	if absolute.AllOf != nil {
-		content = appendPair(content, "allOf", nodeForSchemaArray(*absolute.AllOf))
+	if schema.Required != nil {
+		content = appendPair(content, "required", nodeForStringArray(*schema.Required))
 	}
-	if absolute.AnyOf != nil {
-		content = appendPair(content, "anyOf", nodeForSchemaArray(*absolute.AnyOf))
+	if schema.AdditionalProperties != nil {
+		content = appendPair(content, "additionalProperties", schema.AdditionalProperties.nodeValue())
 	}
-	if absolute.OneOf != nil {
-		content = appendPair(content, "oneOf", nodeForSchemaArray(*absolute.OneOf))
+	if schema.Definitions != nil {
+		content = appendPair(content, "definitions", nodeForNamedCombinedArray(schema.Definitions))
 	}
-	if absolute.Not != nil {
-		content = appendPair(content, "not", absolute.Not.nodeValue())
+	if schema.Properties != nil {
+		content = appendPair(content, "properties", nodeForNamedCombinedArray(schema.Properties))
+	}
+	if schema.PatternProperties != nil {
+		content = appendPair(content, "patternProperties", nodeForNamedCombinedArray(schema.PatternProperties))
+	}
+	if schema.Dependencies != nil {
+		content = appendPair(content, "dependencies", nodeForNamedCombinedOrStringArray(schema.Dependencies))
+	}
+	if schema.PropertyNames != nil {
+		content = appendPair(content, "propertyNames", schema.PropertyNames.nodeValue())
+	}
+
+	if schema.Const != nil {
+		content = appendPair(content, "const", schema.Const)
+	}
+	if schema.Enumeration != nil {
+		content = appendPair(content, "enum", nodeForCombinedEnumArray(schema.Enumeration))
+	}
+	if schema.Type != nil {
+		content = appendPair(content, "type", schema.Type.nodeValue())
+	}
+	if schema.Format != nil {
+		content = appendPair(content, "format", nodeForString(*schema.Format))
+	}
+	if schema.ContentMediaType != nil {
+		content = appendPair(content, "contentMediaType", nodeForString(*schema.ContentMediaType))
+	}
+	if schema.ContentEncoding != nil {
+		content = appendPair(content, "contentEncoding", nodeForString(*schema.ContentEncoding))
+	}
+
+	if schema.If != nil {
+		content = appendPair(content, "if", schema.If.nodeValue())
+	}
+	if schema.Then != nil {
+		content = appendPair(content, "then", schema.Then.nodeValue())
+	}
+	if schema.Else != nil {
+		content = appendPair(content, "else", schema.Else.nodeValue())
+	}
+	if schema.AllOf != nil {
+		content = appendPair(content, "allOf", nodeForCombinedArray(*schema.AllOf))
+	}
+	if schema.AnyOf != nil {
+		content = appendPair(content, "anyOf", nodeForCombinedArray(*schema.AnyOf))
+	}
+	if schema.OneOf != nil {
+		content = appendPair(content, "oneOf", nodeForCombinedArray(*schema.OneOf))
+	}
+	if schema.Not != nil {
+		content = appendPair(content, "not", schema.Not.nodeValue())
 	}
 
 	n.Content = content
@@ -499,7 +499,7 @@ func (absolute *Absolute) nodeValue() *yaml.Node {
 }
 
 // JSONString returns a json representation of a schema.
-func (schema *Schema) JSONString() string {
-	node := schema.nodeValue()
+func (combined *Combined) JSONString() string {
+	node := combined.nodeValue()
 	return Render(node)
 }

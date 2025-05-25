@@ -13,36 +13,16 @@
 // limitations under the License.
 
 // Package jsonschema supports the reading, writing, and manipulation
-// of JSON Schemas.
+// of JSON Combineds.
 package jsonschema07
 
 import "gopkg.in/yaml.v3"
 
-// Schema represents a value that can be either a Absolute or a Boolean.
-type Schema struct {
-	Absolute *Absolute
-	Boolean  *bool
-}
-
-// NewSchemaWithAbsolute creates and returns a new object
-func NewSchemaWithAbsolute(s *Absolute) *Schema {
-	result := &Schema{}
-	result.Absolute = s
-	return result
-}
-
-// NewSchemaWithBoolean creates and returns a new object
-func NewSchemaWithBoolean(b bool) *Schema {
-	result := &Schema{}
-	result.Boolean = &b
-	return result
-}
-
-// The Absolute struct models a JSON Schema and, because schemas are
+// The Schema struct models a JSON Combined and, because schemas are
 // defined hierarchically, contains many references to itself.
 // All fields are pointers and are nil if the associated values
 // are not specified.
-type Absolute struct {
+type Schema struct {
 	ID          *string `json:"$id,omitempty"`
 	Schema      *string `json:"$schema,omitempty"`
 	Ref         *string `json:"$ref,omitempty"`
@@ -50,10 +30,10 @@ type Absolute struct {
 	Title       *string `json:"title,omitempty"`
 	Description *string `json:"description,omitempty"`
 
-	Default   *yaml.Node `json:"default,omitempty"`
-	ReadOnly  *bool      `json:"readOnly,omitempty"`
-	WriteOnly *bool      `json:"writeOnly,omitempty"`
-	Examples  *[]*Schema `json:"examples,omitempty"`
+	Default   *yaml.Node   `json:"default,omitempty"`
+	ReadOnly  *bool        `json:"readOnly,omitempty"`
+	WriteOnly *bool        `json:"writeOnly,omitempty"`
+	Examples  *[]*Combined `json:"examples,omitempty"`
 
 	MultipleOf       *SchemaNumber `json:"multipleOf,omitempty"`
 	Maximum          *SchemaNumber `json:"maximum,omitempty"`
@@ -65,22 +45,22 @@ type Absolute struct {
 	MinLength *int64  `json:"minLength,omitempty"`
 	Pattern   *string `json:"pattern,omitempty"`
 
-	AdditionalItems *Schema              `json:"additionalItems,omitempty"`
-	Items           *SchemaOrSchemaArray `json:"items,omitempty"`
-	MaxItems        *int64               `json:"maxItems,omitempty"`
-	MinItems        *int64               `json:"minItems,omitempty"`
-	UniqueItems     *bool                `json:"uniqueItems,omitempty"`
+	AdditionalItems *Combined                `json:"additionalItems,omitempty"`
+	Items           *CombinedOrCombinedArray `json:"items,omitempty"`
+	MaxItems        *int64                   `json:"maxItems,omitempty"`
+	MinItems        *int64                   `json:"minItems,omitempty"`
+	UniqueItems     *bool                    `json:"uniqueItems,omitempty"`
 
-	Contains             *Schema                      `json:"contains,omitempty"`
-	MaxProperties        *int64                       `json:"maxProperties,omitempty"`
-	MinProperties        *int64                       `json:"minProperties,omitempty"`
-	Required             *[]string                    `json:"required,omitempty"`
-	AdditionalProperties *Schema                      `json:"additionalProperties,omitempty"`
-	Definitions          *[]*NamedSchema              `json:"definitions,omitempty"`
-	Properties           *[]*NamedSchema              `json:"properties,omitempty"`
-	PatternProperties    *[]*NamedSchema              `json:"patternProperties,omitempty"`
-	Dependencies         *[]*NamedSchemaOrStringArray `json:"dependencies,omitempty"`
-	PropertyNames        *Schema                      `json:"propertyNames,omitempty"`
+	Contains             *Combined                      `json:"contains,omitempty"`
+	MaxProperties        *int64                         `json:"maxProperties,omitempty"`
+	MinProperties        *int64                         `json:"minProperties,omitempty"`
+	Required             *[]string                      `json:"required,omitempty"`
+	AdditionalProperties *Combined                      `json:"additionalProperties,omitempty"`
+	Definitions          *[]*NamedCombined              `json:"definitions,omitempty"`
+	Properties           *[]*NamedCombined              `json:"properties,omitempty"`
+	PatternProperties    *[]*NamedCombined              `json:"patternProperties,omitempty"`
+	Dependencies         *[]*NamedCombinedOrStringArray `json:"dependencies,omitempty"`
+	PropertyNames        *Combined                      `json:"propertyNames,omitempty"`
 
 	Const            *yaml.Node `json:"const,omitempty"`
 	Enumeration      *[]SchemaEnumValue
@@ -89,18 +69,38 @@ type Absolute struct {
 	ContentMediaType *string              `json:"contentMediaType,omitempty"`
 	ContentEncoding  *string              `json:"contentEncoding,omitempty"`
 
-	If    *Schema    `json:"if,omitempty"`
-	Then  *Schema    `json:"then,omitempty"`
-	Else  *Schema    `json:"else,omitempty"`
-	AllOf *[]*Schema `json:"allOf,omitempty"`
-	AnyOf *[]*Schema `json:"anyOf,omitempty"`
-	OneOf *[]*Schema `json:"oneOf,omitempty"`
-	Not   *Schema    `json:"not,omitempty"`
+	If    *Combined    `json:"if,omitempty"`
+	Then  *Combined    `json:"then,omitempty"`
+	Else  *Combined    `json:"else,omitempty"`
+	AllOf *[]*Combined `json:"allOf,omitempty"`
+	AnyOf *[]*Combined `json:"anyOf,omitempty"`
+	OneOf *[]*Combined `json:"oneOf,omitempty"`
+	Not   *Combined    `json:"not,omitempty"`
+}
+
+// Combined represents a value that can be either a Schema or a Boolean.
+type Combined struct {
+	Schema  *Schema
+	Boolean *bool
+}
+
+// NewCombinedWithSchema creates and returns a new object
+func NewCombinedWithSchema(s *Schema) *Combined {
+	result := &Combined{}
+	result.Schema = s
+	return result
+}
+
+// NewCombinedWithBoolean creates and returns a new object
+func NewCombinedWithBoolean(b bool) *Combined {
+	result := &Combined{}
+	result.Boolean = &b
+	return result
 }
 
 // These helper structs represent "combination" types that generally can
 // have values of one type or another. All are used to represent parts
-// of Schemas.
+// of Combineds.
 
 // SchemaNumber represents a value that can be either an Integer or a Float.
 type SchemaNumber struct {
@@ -143,63 +143,63 @@ func NewStringOrStringArrayWithStringArray(a []string) *StringOrStringArray {
 	return result
 }
 
-// SchemaOrStringArray represents a value that can be either
-// a Schema or an Array of Strings.
-type SchemaOrStringArray struct {
-	Schema      *Schema
+// CombinedOrStringArray represents a value that can be either
+// a Combined or an Array of Strings.
+type CombinedOrStringArray struct {
+	Combined    *Combined
 	StringArray *[]string
 }
 
-// SchemaOrSchemaArray represents a value that can be either
-// a Schema or an Array of Schemas.
-type SchemaOrSchemaArray struct {
-	Schema      *Schema
-	SchemaArray *[]*Schema
+// CombinedOrCombinedArray represents a value that can be either
+// a Combined or an Array of Combineds.
+type CombinedOrCombinedArray struct {
+	Combined      *Combined
+	CombinedArray *[]*Combined
 }
 
-// NewSchemaOrSchemaArrayWithSchema creates and returns a new object
-func NewSchemaOrSchemaArrayWithSchema(s *Schema) *SchemaOrSchemaArray {
-	result := &SchemaOrSchemaArray{}
-	result.Schema = s
+// NewCombinedOrCombinedArrayWithCombined creates and returns a new object
+func NewCombinedOrCombinedArrayWithCombined(s *Combined) *CombinedOrCombinedArray {
+	result := &CombinedOrCombinedArray{}
+	result.Combined = s
 	return result
 }
 
-// NewSchemaOrSchemaArrayWithSchemaArray creates and returns a new object
-func NewSchemaOrSchemaArrayWithSchemaArray(a []*Schema) *SchemaOrSchemaArray {
-	result := &SchemaOrSchemaArray{}
-	result.SchemaArray = &a
+// NewCombinedOrCombinedArrayWithCombinedArray creates and returns a new object
+func NewCombinedOrCombinedArrayWithCombinedArray(a []*Combined) *CombinedOrCombinedArray {
+	result := &CombinedOrCombinedArray{}
+	result.CombinedArray = &a
 	return result
 }
 
 // SchemaEnumValue represents a value that can be part of an
-// enumeration in a Schema.
+// enumeration in a Combined.
 type SchemaEnumValue struct {
 	String *string
 	Bool   *bool
 }
 
-// NamedSchema is a name-value pair that is used to emulate maps
+// NamedCombined is a name-value pair that is used to emulate maps
 // with ordered keys.
-type NamedSchema struct {
+type NamedCombined struct {
 	Name  string
-	Value *Schema
+	Value *Combined
 }
 
-// NewNamedSchema creates and returns a new object
-func NewNamedSchema(name string, value *Schema) *NamedSchema {
-	return &NamedSchema{Name: name, Value: value}
+// NewNamedCombined creates and returns a new object
+func NewNamedCombined(name string, value *Combined) *NamedCombined {
+	return &NamedCombined{Name: name, Value: value}
 }
 
-// NamedSchemaOrStringArray is a name-value pair that is used
+// NamedCombinedOrStringArray is a name-value pair that is used
 // to emulate maps with ordered keys.
-type NamedSchemaOrStringArray struct {
+type NamedCombinedOrStringArray struct {
 	Name  string
-	Value *SchemaOrStringArray
+	Value *CombinedOrStringArray
 }
 
 // Access named subschemas by name
 
-func namedSchemaArrayElementWithName(array *[]*NamedSchema, name string) *Schema {
+func namedCombinedArrayElementWithName(array *[]*NamedCombined, name string) *Combined {
 	if array == nil {
 		return nil
 	}
@@ -212,21 +212,21 @@ func namedSchemaArrayElementWithName(array *[]*NamedSchema, name string) *Schema
 }
 
 // PropertyWithName returns the selected element.
-func (s *Absolute) PropertyWithName(name string) *Schema {
-	return namedSchemaArrayElementWithName(s.Properties, name)
+func (s *Schema) PropertyWithName(name string) *Combined {
+	return namedCombinedArrayElementWithName(s.Properties, name)
 }
 
 // PatternPropertyWithName returns the selected element.
-func (s *Absolute) PatternPropertyWithName(name string) *Schema {
-	return namedSchemaArrayElementWithName(s.PatternProperties, name)
+func (s *Schema) PatternPropertyWithName(name string) *Combined {
+	return namedCombinedArrayElementWithName(s.PatternProperties, name)
 }
 
 // DefinitionWithName returns the selected element.
-func (s *Absolute) DefinitionWithName(name string) *Schema {
-	return namedSchemaArrayElementWithName(s.Definitions, name)
+func (s *Schema) DefinitionWithName(name string) *Combined {
+	return namedCombinedArrayElementWithName(s.Definitions, name)
 }
 
 // AddProperty adds a named property.
-func (s *Absolute) AddProperty(name string, property *Schema) {
-	*s.Properties = append(*s.Properties, NewNamedSchema(name, property))
+func (s *Schema) AddProperty(name string, property *Combined) {
+	*s.Properties = append(*s.Properties, NewNamedCombined(name, property))
 }

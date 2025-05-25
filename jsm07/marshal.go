@@ -8,6 +8,15 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// ParseSchema parses a JSON string representing a JSON schema and returns a Schema object.
+func ParseSchema(data string) (*Schema, error) {
+	s, err := light.ParseBody([]byte(data))
+	if err != nil {
+		return nil, err
+	}
+	return NewSchemaFromBody(s)
+}
+
 func NewSchemaFromBody(body *light.Body) (*Schema, error) {
 	if body == nil {
 		return nil, nil

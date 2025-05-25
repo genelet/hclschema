@@ -10,10 +10,22 @@ type Reference struct {
 }
 
 type Common struct {
-	Type        *jsonschema.StringOrStringArray
-	Format      *string
-	Default     *yaml.Node
-	Enumeration []jsonschema.SchemaEnumValue
+	Type             *jsonschema.StringOrStringArray
+	Format           *string
+	Default          *yaml.Node
+	Enumeration      []jsonschema.SchemaEnumValue
+	Const            *yaml.Node
+	ContentMediaType *string
+	ContentEncoding  *string
+	ID               *string
+	Schema           *string
+	Comment          *string
+	Title            *string
+	Description      *string
+}
+
+type CommonBoolean struct {
+	Common
 }
 
 type SchemaNumber struct {
@@ -24,10 +36,20 @@ type SchemaNumber struct {
 	ExclusiveMinimum *bool
 }
 
+type CommonNumber struct {
+	Common
+	SchemaNumber
+}
+
 type SchemaString struct {
 	MaxLength *int64
 	MinLength *int64
 	Pattern   *string
+}
+
+type CommonString struct {
+	Common
+	SchemaString
 }
 
 type SchemaArray struct {
@@ -35,6 +57,11 @@ type SchemaArray struct {
 	MaxItems    *int64
 	MinItems    *int64
 	UniqueItems *bool
+}
+
+type CommonArray struct {
+	Common
+	SchemaArray
 }
 
 type SchemaOrStringArray struct {
@@ -51,6 +78,11 @@ type SchemaMap struct {
 	AdditionalProperties *SchemaOrBoolean
 }
 
+type CommonMap struct {
+	Common
+	SchemaMap
+}
+
 type SchemaOrBoolean struct {
 	Schema  *Schema
 	Boolean *bool
@@ -61,6 +93,37 @@ type SchemaObject struct {
 	MinProperties *int64
 	Required      []string
 	Properties    map[string]*Schema
+}
+
+type CommonObject struct {
+	Common
+	SchemaObject
+}
+
+type CommonAllOf struct {
+	Common
+	SchemaObject
+	AllOf []*Schema
+}
+
+type CommonAnyOf struct {
+	Common
+	SchemaObject
+	AnyOf []*Schema
+}
+
+type CommonOneOf struct {
+	Common
+	SchemaObject
+	OneOf []*Schema
+}
+
+type CommonIfThenElse struct {
+	Common
+	SchemaObject
+	If   *Schema
+	Then *Schema
+	Else *Schema
 }
 
 type SchemaFull struct {
@@ -91,15 +154,22 @@ type SchemaFull struct {
 }
 
 type Schema struct {
-	*Common
 	*Reference
-	*SchemaNumber
-	*SchemaString
-	*SchemaArray
-	*SchemaMap
-	*SchemaObject
+	*CommonBoolean
+	*CommonNumber
+	*CommonString
+	*CommonArray
+	*CommonMap
+	*CommonObject
+	*CommonAllOf
+	*CommonAnyOf
+	*CommonOneOf
+	*CommonIfThenElse
 	*SchemaFull
-	isFull bool
+}
+
+func (s *Schema) IsFull() bool {
+	return s != nil && s.SchemaFull != nil
 }
 
 func isCommon(s *jsonschema.Schema) bool {

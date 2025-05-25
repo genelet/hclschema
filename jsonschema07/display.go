@@ -21,7 +21,7 @@ import (
 
 //
 // DISPLAY
-// The following methods display Schemas.
+// The following methods display Combineds.
 //
 
 // Description returns a string representation of a string or string array.
@@ -35,181 +35,198 @@ func (s *StringOrStringArray) Description() string {
 	return ""
 }
 
+// Returns a string representation of a Combined.
+func (combined *Combined) String() string {
+	if combined.Boolean != nil {
+		return fmt.Sprintf("%+v\n", *(combined.Boolean))
+	}
+	return combined.Schema.String()
+}
+
 // Returns a string representation of a Schema.
 func (schema *Schema) String() string {
+	if schema == nil {
+		return ""
+	}
 	return schema.describeSchema("")
+}
+
+// Helper: Returns a string representation of a Combined indented by a specified string.
+func (combined *Combined) describeCombined(indent string) string {
+	if combined == nil {
+		return ""
+	}
+	if combined.Boolean != nil {
+		return indent + "boolean: " + fmt.Sprintf("%+v\n", *(combined.Boolean))
+	}
+	return indent + "schema:\n" + combined.Schema.describeSchema(indent+"  ")
 }
 
 // Helper: Returns a string representation of a Schema indented by a specified string.
 func (schema *Schema) describeSchema(indent string) string {
-	if schema.Boolean != nil {
-		return indent + fmt.Sprintf("%+v\n", *(schema.Boolean))
-	}
-
-	absolute := schema.Absolute
 	result := ""
-	if absolute.Schema != nil {
-		result += indent + "$schema: " + *(absolute.Schema) + "\n"
+	if schema.Schema != nil {
+		result += indent + "$schema: " + *(schema.Schema) + "\n"
 	}
-	if absolute.ID != nil {
-		switch strings.TrimSuffix(*absolute.Schema, "#") {
+	if schema.ID != nil {
+		switch strings.TrimSuffix(*schema.Schema, "#") {
 		case "http://json-schema.org/draft-07/schema#":
 			fallthrough
 		case "#":
 			fallthrough
 		case "":
-			result += indent + "id: " + *(absolute.ID) + "\n"
+			result += indent + "id: " + *(schema.ID) + "\n"
 		default:
-			result += indent + "$id: " + *(absolute.ID) + "\n"
+			result += indent + "$id: " + *(schema.ID) + "\n"
 		}
 	}
-	if absolute.Ref != nil {
-		result += indent + "$ref: " + *(absolute.Ref) + "\n"
+	if schema.Ref != nil {
+		result += indent + "$ref: " + *(schema.Ref) + "\n"
 	}
-	if absolute.Comment != nil {
-		result += indent + "$comment: " + *(absolute.Comment) + "\n"
+	if schema.Comment != nil {
+		result += indent + "$comment: " + *(schema.Comment) + "\n"
 	}
-	if absolute.Title != nil {
-		result += indent + "title: " + *(absolute.Title) + "\n"
+	if schema.Title != nil {
+		result += indent + "title: " + *(schema.Title) + "\n"
 	}
-	if absolute.Description != nil {
-		result += indent + "description: " + *(absolute.Description) + "\n"
+	if schema.Description != nil {
+		result += indent + "description: " + *(schema.Description) + "\n"
 	}
 
-	if absolute.Default != nil {
+	if schema.Default != nil {
 		result += indent + "default:\n"
-		result += indent + fmt.Sprintf("  %+v\n", *(absolute.Default))
+		result += indent + fmt.Sprintf("  %+v\n", schema.Default.Value)
 	}
-	if absolute.ReadOnly != nil && *absolute.ReadOnly {
-		result += indent + fmt.Sprintf("readOnly: %+v\n", *(absolute.ReadOnly))
+	if schema.ReadOnly != nil && *schema.ReadOnly {
+		result += indent + fmt.Sprintf("readOnly: %+v\n", *(schema.ReadOnly))
 	}
-	if absolute.WriteOnly != nil && *absolute.WriteOnly {
-		result += indent + fmt.Sprintf("writeOnly: %+v\n", *(absolute.WriteOnly))
+	if schema.WriteOnly != nil && *schema.WriteOnly {
+		result += indent + fmt.Sprintf("writeOnly: %+v\n", *(schema.WriteOnly))
 	}
-	if absolute.Examples != nil {
+	if schema.Examples != nil {
 		result += indent + "examples:\n"
-		for _, example := range *(absolute.Examples) {
-			result += indent + "  " + fmt.Sprintf("%+v\n", *(example.Absolute))
+		for _, example := range *(schema.Examples) {
+			result += indent + "  " + fmt.Sprintf("%+v\n", *(example.Schema))
 		}
 	}
 
-	if absolute.MultipleOf != nil {
-		result += indent + fmt.Sprintf("multipleOf: %+v\n", *(absolute.MultipleOf))
+	if schema.MultipleOf != nil {
+		result += indent + fmt.Sprintf("multipleOf: %+v\n", *(schema.MultipleOf))
 	}
-	if absolute.Maximum != nil {
-		result += indent + fmt.Sprintf("maximum: %+v\n", *(absolute.Maximum))
+	if schema.Maximum != nil {
+		result += indent + fmt.Sprintf("maximum: %+v\n", *(schema.Maximum))
 	}
-	if absolute.ExclusiveMaximum != nil {
-		result += indent + fmt.Sprintf("exclusiveMaximum: %+v\n", *(absolute.ExclusiveMaximum))
+	if schema.ExclusiveMaximum != nil {
+		result += indent + fmt.Sprintf("exclusiveMaximum: %+v\n", *(schema.ExclusiveMaximum))
 	}
-	if absolute.Minimum != nil {
-		result += indent + fmt.Sprintf("minimum: %+v\n", *(absolute.Minimum))
+	if schema.Minimum != nil {
+		result += indent + fmt.Sprintf("minimum: %+v\n", *(schema.Minimum))
 	}
-	if absolute.ExclusiveMinimum != nil {
-		result += indent + fmt.Sprintf("exclusiveMinimum: %+v\n", *(absolute.ExclusiveMinimum))
-	}
-
-	if absolute.MaxLength != nil {
-		result += indent + fmt.Sprintf("maxLength: %+v\n", *(absolute.MaxLength))
-	}
-	if absolute.MinLength != nil {
-		result += indent + fmt.Sprintf("minLength: %+v\n", *(absolute.MinLength))
-	}
-	if absolute.Pattern != nil {
-		result += indent + fmt.Sprintf("pattern: %+v\n", *(absolute.Pattern))
+	if schema.ExclusiveMinimum != nil {
+		result += indent + fmt.Sprintf("exclusiveMinimum: %+v\n", *(schema.ExclusiveMinimum))
 	}
 
-	if absolute.AdditionalItems != nil {
-		s := absolute.AdditionalItems
+	if schema.MaxLength != nil {
+		result += indent + fmt.Sprintf("maxLength: %+v\n", *(schema.MaxLength))
+	}
+	if schema.MinLength != nil {
+		result += indent + fmt.Sprintf("minLength: %+v\n", *(schema.MinLength))
+	}
+	if schema.Pattern != nil {
+		result += indent + fmt.Sprintf("pattern: %+v\n", *(schema.Pattern))
+	}
+
+	if schema.AdditionalItems != nil {
+		s := schema.AdditionalItems
 		if s != nil {
 			result += indent + "additionalItems:\n"
-			result += s.describeSchema(indent + "  ")
+			result += s.describeCombined(indent + "  ")
 		} else {
-			b := *(absolute.AdditionalItems.Boolean)
+			b := *(schema.AdditionalItems.Boolean)
 			result += indent + fmt.Sprintf("additionalItems: %+v\n", b)
 		}
 	}
-	if absolute.Items != nil {
+	if schema.Items != nil {
 		result += indent + "items:\n"
-		items := absolute.Items
-		if items.SchemaArray != nil {
-			for i, s := range *(items.SchemaArray) {
+		items := schema.Items
+		if items.CombinedArray != nil {
+			for i, s := range *(items.CombinedArray) {
 				result += indent + "  " + fmt.Sprintf("%d", i) + ":\n"
-				result += s.describeSchema(indent + "  " + "  ")
+				result += s.describeCombined(indent + "  " + "  ")
 			}
-		} else if items.Schema != nil {
-			result += items.Schema.describeSchema(indent + "  " + "  ")
+		} else if items.Combined != nil {
+			result += items.Combined.describeCombined(indent + "  " + "  ")
 		}
 	}
-	if absolute.MaxItems != nil {
-		result += indent + fmt.Sprintf("maxItems: %+v\n", *(absolute.MaxItems))
+	if schema.MaxItems != nil {
+		result += indent + fmt.Sprintf("maxItems: %+v\n", *(schema.MaxItems))
 	}
-	if absolute.MinItems != nil {
-		result += indent + fmt.Sprintf("minItems: %+v\n", *(absolute.MinItems))
+	if schema.MinItems != nil {
+		result += indent + fmt.Sprintf("minItems: %+v\n", *(schema.MinItems))
 	}
-	if absolute.UniqueItems != nil {
-		result += indent + fmt.Sprintf("uniqueItems: %+v\n", *(absolute.UniqueItems))
+	if schema.UniqueItems != nil {
+		result += indent + fmt.Sprintf("uniqueItems: %+v\n", *(schema.UniqueItems))
 	}
 
-	if absolute.Contains != nil {
+	if schema.Contains != nil {
 		result += indent + "contains:\n"
-		result += absolute.Contains.describeSchema(indent + "  ")
+		result += schema.Contains.describeCombined(indent + "  ")
 	}
-	if absolute.MaxProperties != nil {
-		result += indent + fmt.Sprintf("maxProperties: %+v\n", *(absolute.MaxProperties))
+	if schema.MaxProperties != nil {
+		result += indent + fmt.Sprintf("maxProperties: %+v\n", *(schema.MaxProperties))
 	}
-	if absolute.MinProperties != nil {
-		result += indent + fmt.Sprintf("minProperties: %+v\n", *(absolute.MinProperties))
+	if schema.MinProperties != nil {
+		result += indent + fmt.Sprintf("minProperties: %+v\n", *(schema.MinProperties))
 	}
-	if absolute.Required != nil {
-		result += indent + fmt.Sprintf("required: %+v\n", *(absolute.Required))
+	if schema.Required != nil {
+		result += indent + fmt.Sprintf("required: %+v\n", *(schema.Required))
 	}
-	if absolute.AdditionalProperties != nil {
-		s := absolute.AdditionalProperties
+	if schema.AdditionalProperties != nil {
+		s := schema.AdditionalProperties
 		if s != nil {
 			result += indent + "additionalProperties:\n"
-			result += s.describeSchema(indent + "  ")
+			result += s.describeCombined(indent + "  ")
 		} else {
-			b := *(absolute.AdditionalProperties.Boolean)
+			b := *(schema.AdditionalProperties.Boolean)
 			result += indent + fmt.Sprintf("additionalProperties: %+v\n", b)
 		}
 	}
-	if absolute.Definitions != nil {
+	if schema.Definitions != nil {
 		result += indent + "definitions:\n"
-		for _, pair := range *(absolute.Definitions) {
+		for _, pair := range *(schema.Definitions) {
 			name := pair.Name
 			s := pair.Value
 			result += indent + "  " + name + ":\n"
-			result += s.describeSchema(indent + "  " + "  ")
+			result += s.describeCombined(indent + "  " + "  ")
 		}
 	}
-	if absolute.Properties != nil {
+	if schema.Properties != nil {
 		result += indent + "properties:\n"
-		for _, pair := range *(absolute.Properties) {
+		for _, pair := range *(schema.Properties) {
 			name := pair.Name
 			s := pair.Value
 			result += indent + "  " + name + ":\n"
-			result += s.describeSchema(indent + "  " + "  ")
+			result += s.describeCombined(indent + "  " + "  ")
 		}
 	}
-	if absolute.PatternProperties != nil {
+	if schema.PatternProperties != nil {
 		result += indent + "patternProperties:\n"
-		for _, pair := range *(absolute.PatternProperties) {
+		for _, pair := range *(schema.PatternProperties) {
 			name := pair.Name
 			s := pair.Value
 			result += indent + "  " + name + ":\n"
-			result += s.describeSchema(indent + "  " + "  ")
+			result += s.describeCombined(indent + "  " + "  ")
 		}
 	}
-	if absolute.Dependencies != nil {
+	if schema.Dependencies != nil {
 		result += indent + "dependencies:\n"
-		for _, pair := range *(absolute.Dependencies) {
+		for _, pair := range *(schema.Dependencies) {
 			name := pair.Name
 			schemaOrStringArray := pair.Value
-			s := schemaOrStringArray.Schema
+			s := schemaOrStringArray.Combined
 			if s != nil {
 				result += indent + "  " + name + ":\n"
-				result += s.describeSchema(indent + "  " + "  ")
+				result += s.describeCombined(indent + "  " + "  ")
 			} else {
 				a := schemaOrStringArray.StringArray
 				if a != nil {
@@ -222,18 +239,18 @@ func (schema *Schema) describeSchema(indent string) string {
 
 		}
 	}
-	if absolute.PropertyNames != nil {
+	if schema.PropertyNames != nil {
 		result += indent + "propertyNames:\n"
-		result += absolute.PropertyNames.describeSchema(indent + "  ")
+		result += schema.PropertyNames.describeCombined(indent + "  ")
 	}
 
-	if absolute.Const != nil {
+	if schema.Const != nil {
 		result += indent + "const:\n"
-		result += indent + fmt.Sprintf("  %+v\n", *(absolute.Const))
+		result += indent + fmt.Sprintf("  %+v\n", schema.Const.Value)
 	}
-	if absolute.Enumeration != nil {
+	if schema.Enumeration != nil {
 		result += indent + "enumeration:\n"
-		for _, value := range *(absolute.Enumeration) {
+		for _, value := range *(schema.Enumeration) {
 			if value.String != nil {
 				result += indent + "  " + fmt.Sprintf("%+v\n", *value.String)
 			} else {
@@ -241,55 +258,58 @@ func (schema *Schema) describeSchema(indent string) string {
 			}
 		}
 	}
-	if absolute.Type != nil {
-		result += indent + fmt.Sprintf("type: %+v\n", absolute.Type.Description())
+	if schema.Type != nil {
+		result += indent + fmt.Sprintf("type: %+v\n", schema.Type.Description())
 	}
-	if absolute.Format != nil {
-		result += indent + "format: " + *(absolute.Format) + "\n"
+	if schema.Format != nil {
+		result += indent + "format: " + *(schema.Format) + "\n"
 	}
-	if absolute.ContentMediaType != nil {
-		result += indent + "contentMediaType: " + *(absolute.ContentMediaType) + "\n"
+	if schema.ContentMediaType != nil {
+		result += indent + "contentMediaType: " + *(schema.ContentMediaType) + "\n"
 	}
-	if absolute.ContentEncoding != nil {
-		result += indent + "contentEncoding: " + *(absolute.ContentEncoding) + "\n"
+	if schema.ContentEncoding != nil {
+		result += indent + "contentEncoding: " + *(schema.ContentEncoding) + "\n"
 	}
 
-	if absolute.If != nil {
+	if schema.If != nil {
 		result += indent + "if:\n"
-		result += absolute.If.describeSchema(indent + "  ")
+		result += schema.If.describeCombined(indent + "  ")
 	}
-	if absolute.Then != nil {
+	if schema.Then != nil {
 		result += indent + "then:\n"
-		result += absolute.Then.describeSchema(indent + "  ")
+		result += schema.Then.describeCombined(indent + "  ")
 	}
-	if absolute.Else != nil {
+	if schema.Else != nil {
 		result += indent + "else:\n"
-		result += absolute.Else.describeSchema(indent + "  ")
+		result += schema.Else.describeCombined(indent + "  ")
 	}
-	if absolute.AllOf != nil {
+	if schema.AllOf != nil {
 		result += indent + "allOf:\n"
-		for _, s := range *(absolute.AllOf) {
-			result += s.describeSchema(indent + "  ")
+		for _, s := range *(schema.AllOf) {
 			result += indent + "-\n"
+			result += s.describeCombined(indent + "  ")
 		}
 	}
-	if absolute.AnyOf != nil {
+	if schema.AnyOf != nil {
 		result += indent + "anyOf:\n"
-		for _, s := range *(absolute.AnyOf) {
-			result += s.describeSchema(indent + "  ")
+		for _, s := range *(schema.AnyOf) {
+			if s == nil {
+				continue
+			}
 			result += indent + "-\n"
+			result += s.describeCombined(indent + "  ")
 		}
 	}
-	if absolute.OneOf != nil {
+	if schema.OneOf != nil {
 		result += indent + "oneOf:\n"
-		for _, s := range *(absolute.OneOf) {
-			result += s.describeSchema(indent + "  ")
+		for _, s := range *(schema.OneOf) {
 			result += indent + "-\n"
+			result += s.describeCombined(indent + "  ")
 		}
 	}
-	if absolute.Not != nil {
+	if schema.Not != nil {
 		result += indent + "not:\n"
-		result += absolute.Not.describeSchema(indent + "  ")
+		result += schema.Not.describeCombined(indent + "  ")
 	}
 
 	return result

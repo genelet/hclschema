@@ -22,64 +22,64 @@ import (
 
 //
 // OPERATIONS
-// The following methods perform operations on Schemas.
+// The following methods perform operations on Combineds.
 //
 
-// IsEmpty returns true if no members of the Schema are specified.
-func (absolute *Absolute) IsEmpty() bool {
-	return (absolute.ID == nil) &&
-		(absolute.Comment == nil) &&
-		(absolute.Schema == nil) &&
-		(absolute.Ref == nil) &&
-		(absolute.Title == nil) &&
-		(absolute.Description == nil) &&
+// IsEmpty returns true if no members of the Combined are specified.
+func (schema *Schema) IsEmpty() bool {
+	return (schema.ID == nil) &&
+		(schema.Comment == nil) &&
+		(schema.Schema == nil) &&
+		(schema.Ref == nil) &&
+		(schema.Title == nil) &&
+		(schema.Description == nil) &&
 
-		(absolute.Default == nil) &&
-		(absolute.ReadOnly == nil) &&
-		(absolute.WriteOnly == nil) &&
-		(absolute.Examples == nil) &&
+		(schema.Default == nil) &&
+		(schema.ReadOnly == nil) &&
+		(schema.WriteOnly == nil) &&
+		(schema.Examples == nil) &&
 
-		(absolute.MultipleOf == nil) &&
-		(absolute.Maximum == nil) &&
-		(absolute.ExclusiveMaximum == nil) &&
-		(absolute.Minimum == nil) &&
-		(absolute.ExclusiveMinimum == nil) &&
+		(schema.MultipleOf == nil) &&
+		(schema.Maximum == nil) &&
+		(schema.ExclusiveMaximum == nil) &&
+		(schema.Minimum == nil) &&
+		(schema.ExclusiveMinimum == nil) &&
 
-		(absolute.MaxLength == nil) &&
-		(absolute.MinLength == nil) &&
-		(absolute.Pattern == nil) &&
+		(schema.MaxLength == nil) &&
+		(schema.MinLength == nil) &&
+		(schema.Pattern == nil) &&
 
-		(absolute.AdditionalItems == nil) &&
-		(absolute.Items == nil) &&
-		(absolute.MaxItems == nil) &&
-		(absolute.MinItems == nil) &&
-		(absolute.UniqueItems == nil) &&
+		(schema.AdditionalItems == nil) &&
+		(schema.Items == nil) &&
+		(schema.MaxItems == nil) &&
+		(schema.MinItems == nil) &&
+		(schema.UniqueItems == nil) &&
 
-		(absolute.Contains == nil) &&
-		(absolute.MaxProperties == nil) &&
-		(absolute.MinProperties == nil) &&
-		(absolute.Required == nil) &&
-		(absolute.AdditionalProperties == nil) &&
-		(absolute.Definitions == nil) &&
-		(absolute.Properties == nil) &&
-		(absolute.PatternProperties == nil) &&
-		(absolute.Dependencies == nil) &&
-		(absolute.PropertyNames == nil) &&
+		(schema.Contains == nil) &&
+		(schema.MaxProperties == nil) &&
+		(schema.MinProperties == nil) &&
+		(schema.Required == nil) &&
+		(schema.AdditionalProperties == nil) &&
+		(schema.Definitions == nil) &&
+		(schema.Properties == nil) &&
+		(schema.PatternProperties == nil) &&
+		(schema.Dependencies == nil) &&
+		(schema.PropertyNames == nil) &&
 
-		(absolute.Const == nil) &&
-		(absolute.Enumeration == nil) &&
-		(absolute.Type == nil) &&
-		(absolute.Format == nil) &&
-		(absolute.ContentMediaType == nil) &&
-		(absolute.ContentEncoding == nil) &&
+		(schema.Const == nil) &&
+		(schema.Enumeration == nil) &&
+		(schema.Type == nil) &&
+		(schema.Format == nil) &&
+		(schema.ContentMediaType == nil) &&
+		(schema.ContentEncoding == nil) &&
 
-		(absolute.If == nil) &&
-		(absolute.Then == nil) &&
-		(absolute.Else == nil) &&
-		(absolute.AllOf == nil) &&
-		(absolute.AnyOf == nil) &&
-		(absolute.OneOf == nil) &&
-		(absolute.Not == nil)
+		(schema.If == nil) &&
+		(schema.Then == nil) &&
+		(schema.Else == nil) &&
+		(schema.AllOf == nil) &&
+		(schema.AnyOf == nil) &&
+		(schema.OneOf == nil) &&
+		(schema.Not == nil)
 }
 
 // IsEqual returns true if two schemas are equal.
@@ -87,268 +87,273 @@ func (schema *Schema) IsEqual(schema2 *Schema) bool {
 	return schema.String() == schema2.String()
 }
 
-// SchemaOperation represents a function that can be applied to a Schema.
-type SchemaOperation func(schema *Schema, context string)
+func (combined *Combined) IsEqual(combined2 *Combined) bool {
+	return combined.String() == combined2.String()
+}
 
-// Applies a specified function to a Schema and all of the Schemas that it contains.
-func (schema *Schema) applyToSchemas(operation SchemaOperation, context string) {
-	if schema.Boolean != nil {
+// CombinedOperation represents a function that can be applied to a Combined.
+type CombinedOperation func(combined *Combined, context string)
+
+// Applies a specified function to a Combined and all of the Combineds that it contains.
+func (combined *Combined) applyToCombineds(operation CombinedOperation, context string) {
+	if combined.Boolean != nil {
 		return
 	}
 
-	absolute := schema.Absolute
+	schema := combined.Schema
 
-	if absolute.AdditionalItems != nil {
-		absolute.AdditionalItems.applyToSchemas(operation, "AdditionalItems")
+	if schema.AdditionalItems != nil {
+		schema.AdditionalItems.applyToCombineds(operation, "AdditionalItems")
 	}
 
-	if absolute.Items != nil {
-		if absolute.Items.SchemaArray != nil {
-			for _, s := range *(absolute.Items.SchemaArray) {
-				s.applyToSchemas(operation, "Items.SchemaArray")
+	if schema.Items != nil {
+		if schema.Items.CombinedArray != nil {
+			for _, s := range *(schema.Items.CombinedArray) {
+				s.applyToCombineds(operation, "Items.CombinedArray")
 			}
-		} else if absolute.Items.Schema != nil {
-			absolute.Items.Schema.applyToSchemas(operation, "Items.Schema")
+		} else if schema.Items.Combined != nil {
+			schema.Items.Combined.applyToCombineds(operation, "Items.Combined")
 		}
 	}
 
-	if absolute.Contains != nil {
-		absolute.Contains.applyToSchemas(operation, "Contains")
+	if schema.Contains != nil {
+		schema.Contains.applyToCombineds(operation, "Contains")
 	}
 
-	if absolute.AdditionalProperties != nil {
-		absolute.AdditionalProperties.applyToSchemas(operation, "AdditionalProperties")
+	if schema.AdditionalProperties != nil {
+		schema.AdditionalProperties.applyToCombineds(operation, "AdditionalProperties")
 	}
 
-	if absolute.Definitions != nil {
-		for _, pair := range *(absolute.Definitions) {
+	if schema.Definitions != nil {
+		for _, pair := range *(schema.Definitions) {
 			s := pair.Value
-			s.applyToSchemas(operation, "Definitions")
+			s.applyToCombineds(operation, "Definitions")
 		}
 	}
-	if absolute.Properties != nil {
-		for _, pair := range *(absolute.Properties) {
+	if schema.Properties != nil {
+		for _, pair := range *(schema.Properties) {
 			s := pair.Value
-			s.applyToSchemas(operation, "Properties")
+			s.applyToCombineds(operation, "Properties")
 		}
 	}
-	if absolute.PatternProperties != nil {
-		for _, pair := range *(absolute.PatternProperties) {
+	if schema.PatternProperties != nil {
+		for _, pair := range *(schema.PatternProperties) {
 			s := pair.Value
-			s.applyToSchemas(operation, "PatternProperties")
+			s.applyToCombineds(operation, "PatternProperties")
 		}
 	}
 
-	if absolute.Dependencies != nil {
-		for _, pair := range *(absolute.Dependencies) {
+	if schema.Dependencies != nil {
+		for _, pair := range *(schema.Dependencies) {
 			schemaOrStringArray := pair.Value
-			s := schemaOrStringArray.Schema
+			s := schemaOrStringArray.Combined
 			if s != nil {
-				s.applyToSchemas(operation, "Dependencies")
+				s.applyToCombineds(operation, "Dependencies")
 			}
 		}
 	}
 
-	if absolute.PropertyNames != nil {
-		absolute.PropertyNames.applyToSchemas(operation, "PropertyNames")
+	if schema.PropertyNames != nil {
+		schema.PropertyNames.applyToCombineds(operation, "PropertyNames")
 	}
 
-	if absolute.If != nil {
-		absolute.If.applyToSchemas(operation, "If")
+	if schema.If != nil {
+		schema.If.applyToCombineds(operation, "If")
 	}
-	if absolute.Then != nil {
-		absolute.Then.applyToSchemas(operation, "Then")
+	if schema.Then != nil {
+		schema.Then.applyToCombineds(operation, "Then")
 	}
-	if absolute.Else != nil {
-		absolute.Else.applyToSchemas(operation, "Else")
-	}
-
-	if absolute.AllOf != nil {
-		for _, s := range *(absolute.AllOf) {
-			s.applyToSchemas(operation, "AllOf")
-		}
-	}
-	if absolute.AnyOf != nil {
-		for _, s := range *(absolute.AnyOf) {
-			s.applyToSchemas(operation, "AnyOf")
-		}
-	}
-	if absolute.OneOf != nil {
-		for _, s := range *(absolute.OneOf) {
-			s.applyToSchemas(operation, "OneOf")
-		}
-	}
-	if absolute.Not != nil {
-		absolute.Not.applyToSchemas(operation, "Not")
+	if schema.Else != nil {
+		schema.Else.applyToCombineds(operation, "Else")
 	}
 
-	operation(schema, context)
+	if schema.AllOf != nil {
+		for _, s := range *(schema.AllOf) {
+			s.applyToCombineds(operation, "AllOf")
+		}
+	}
+	if schema.AnyOf != nil {
+		for _, s := range *(schema.AnyOf) {
+			s.applyToCombineds(operation, "AnyOf")
+		}
+	}
+	if schema.OneOf != nil {
+		for _, s := range *(schema.OneOf) {
+			s.applyToCombineds(operation, "OneOf")
+		}
+	}
+	if schema.Not != nil {
+		schema.Not.applyToCombineds(operation, "Not")
+	}
+
+	operation(combined, context)
 }
 
-// CopyProperties copies all non-nil properties from the source Schema to the schema Schema.
-func (schema *Schema) CopyProperties(source *Schema) {
-	if schema.Boolean != nil {
+// CopyProperties copies all non-nil properties from the source Combined to the schema Combined.
+func (combined *Combined) CopyProperties(source *Combined) {
+	if source.Boolean != nil {
+		combined.Boolean = source.Boolean
 		return
 	}
-	schema.Absolute.CopyProperties(source.Absolute)
+	combined.Schema.CopyProperties(source.Schema)
 }
 
-func (absolute *Absolute) CopyProperties(source *Absolute) {
+func (schema *Schema) CopyProperties(source *Schema) {
 	if source.Schema != nil {
-		absolute.Schema = source.Schema
+		schema.Schema = source.Schema
 	}
 	if source.ID != nil {
-		absolute.ID = source.ID
+		schema.ID = source.ID
 	}
 	if source.Comment != nil {
-		absolute.Comment = source.Comment
+		schema.Comment = source.Comment
 	}
 	if source.Ref != nil {
-		absolute.Ref = source.Ref
+		schema.Ref = source.Ref
 	}
 	if source.Title != nil {
-		absolute.Title = source.Title
+		schema.Title = source.Title
 	}
 	if source.Description != nil {
-		absolute.Description = source.Description
+		schema.Description = source.Description
 	}
 
 	if source.Default != nil {
-		absolute.Default = source.Default
+		schema.Default = source.Default
 	}
 	if source.ReadOnly != nil {
-		absolute.ReadOnly = source.ReadOnly
+		schema.ReadOnly = source.ReadOnly
 	}
 	if source.WriteOnly != nil {
-		absolute.WriteOnly = source.WriteOnly
+		schema.WriteOnly = source.WriteOnly
 	}
 	if source.Examples != nil {
-		absolute.Examples = source.Examples
+		schema.Examples = source.Examples
 	}
 
 	if source.MultipleOf != nil {
-		absolute.MultipleOf = source.MultipleOf
+		schema.MultipleOf = source.MultipleOf
 	}
 	if source.Maximum != nil {
-		absolute.Maximum = source.Maximum
+		schema.Maximum = source.Maximum
 	}
 	if source.ExclusiveMaximum != nil {
-		absolute.ExclusiveMaximum = source.ExclusiveMaximum
+		schema.ExclusiveMaximum = source.ExclusiveMaximum
 	}
 	if source.Minimum != nil {
-		absolute.Minimum = source.Minimum
+		schema.Minimum = source.Minimum
 	}
 	if source.ExclusiveMinimum != nil {
-		absolute.ExclusiveMinimum = source.ExclusiveMinimum
+		schema.ExclusiveMinimum = source.ExclusiveMinimum
 	}
 
 	if source.MaxLength != nil {
-		absolute.MaxLength = source.MaxLength
+		schema.MaxLength = source.MaxLength
 	}
 	if source.MinLength != nil {
-		absolute.MinLength = source.MinLength
+		schema.MinLength = source.MinLength
 	}
 	if source.Pattern != nil {
-		absolute.Pattern = source.Pattern
+		schema.Pattern = source.Pattern
 	}
 
 	if source.AdditionalItems != nil {
-		absolute.AdditionalItems = source.AdditionalItems
+		schema.AdditionalItems = source.AdditionalItems
 	}
 	if source.Items != nil {
-		absolute.Items = source.Items
+		schema.Items = source.Items
 	}
 	if source.MaxItems != nil {
-		absolute.MaxItems = source.MaxItems
+		schema.MaxItems = source.MaxItems
 	}
 	if source.MinItems != nil {
-		absolute.MinItems = source.MinItems
+		schema.MinItems = source.MinItems
 	}
 	if source.UniqueItems != nil {
-		absolute.UniqueItems = source.UniqueItems
+		schema.UniqueItems = source.UniqueItems
 	}
 
 	if source.Contains != nil {
-		absolute.Contains = source.Contains
+		schema.Contains = source.Contains
 	}
 	if source.MaxProperties != nil {
-		absolute.MaxProperties = source.MaxProperties
+		schema.MaxProperties = source.MaxProperties
 	}
 	if source.MinProperties != nil {
-		absolute.MinProperties = source.MinProperties
+		schema.MinProperties = source.MinProperties
 	}
 	if source.Required != nil {
-		absolute.Required = source.Required
+		schema.Required = source.Required
 	}
 	if source.AdditionalProperties != nil {
-		absolute.AdditionalProperties = source.AdditionalProperties
+		schema.AdditionalProperties = source.AdditionalProperties
 	}
 	if source.Definitions != nil {
-		absolute.Definitions = source.Definitions
+		schema.Definitions = source.Definitions
 	}
 	if source.Properties != nil {
-		absolute.Properties = source.Properties
+		schema.Properties = source.Properties
 	}
 	if source.PatternProperties != nil {
-		absolute.PatternProperties = source.PatternProperties
+		schema.PatternProperties = source.PatternProperties
 	}
 	if source.Dependencies != nil {
-		absolute.Dependencies = source.Dependencies
+		schema.Dependencies = source.Dependencies
 	}
 	if source.PropertyNames != nil {
-		absolute.PropertyNames = source.PropertyNames
+		schema.PropertyNames = source.PropertyNames
 	}
 
 	if source.Const != nil {
-		absolute.Const = source.Const
+		schema.Const = source.Const
 	}
 	if source.Enumeration != nil {
-		absolute.Enumeration = source.Enumeration
+		schema.Enumeration = source.Enumeration
 	}
 	if source.Type != nil {
-		absolute.Type = source.Type
+		schema.Type = source.Type
 	}
 	if source.Format != nil {
-		absolute.Format = source.Format
+		schema.Format = source.Format
 	}
 	if source.ContentMediaType != nil {
-		absolute.ContentMediaType = source.ContentMediaType
+		schema.ContentMediaType = source.ContentMediaType
 	}
 	if source.ContentEncoding != nil {
-		absolute.ContentEncoding = source.ContentEncoding
+		schema.ContentEncoding = source.ContentEncoding
 	}
 
 	if source.If != nil {
-		absolute.If = source.If
+		schema.If = source.If
 	}
 	if source.Then != nil {
-		absolute.Then = source.Then
+		schema.Then = source.Then
 	}
 	if source.Else != nil {
-		absolute.Else = source.Else
+		schema.Else = source.Else
 	}
 	if source.AllOf != nil {
-		absolute.AllOf = source.AllOf
+		schema.AllOf = source.AllOf
 	}
 	if source.AnyOf != nil {
-		absolute.AnyOf = source.AnyOf
+		schema.AnyOf = source.AnyOf
 	}
 	if source.OneOf != nil {
-		absolute.OneOf = source.OneOf
+		schema.OneOf = source.OneOf
 	}
 	if source.Not != nil {
-		absolute.Not = source.Not
+		schema.Not = source.Not
 	}
 }
 
-// TypeIs returns true if the Type of a Schema includes the specified type
-func (absolute *Absolute) TypeIs(typeName string) bool {
-	if absolute.Type != nil {
-		// the absolute Type is either a string or an array of strings
-		if absolute.Type.String != nil {
-			return (*(absolute.Type.String) == typeName)
-		} else if absolute.Type.StringArray != nil {
-			for _, n := range *(absolute.Type.StringArray) {
+// TypeIs returns true if the Type of a Combined includes the specified type
+func (schema *Schema) TypeIs(typeName string) bool {
+	if schema.Type != nil {
+		// the schema Type is either a string or an array of strings
+		if schema.Type.String != nil {
+			return (*(schema.Type.String) == typeName)
+		} else if schema.Type.StringArray != nil {
+			for _, n := range *(schema.Type.StringArray) {
 				if n == typeName {
 					return true
 				}
@@ -358,38 +363,38 @@ func (absolute *Absolute) TypeIs(typeName string) bool {
 	return false
 }
 
-// ResolveRefs resolves "$ref" elements in a Schema and its children.
+// ResolveRefs resolves "$ref" elements in a Combined and its children.
 // But if a reference refers to an object type, is inside a oneOf, or contains a oneOf,
 // the reference is kept and we expect downstream tools to separately model these
 // referenced schemas.
-func (schema *Schema) ResolveRefs() {
-	rootSchema := schema
+func (combined *Combined) ResolveRefs() {
+	rootCombined := combined
 	count := 1
 	for count > 0 {
 		count = 0
-		schema.applyToSchemas(
-			func(schema *Schema, context string) {
-				if schema.Boolean != nil {
+		combined.applyToCombineds(
+			func(combined *Combined, context string) {
+				if combined.Boolean != nil {
 					return
 				}
-				absolute := schema.Absolute
-				if absolute.Ref != nil {
-					resolvedRef, err := rootSchema.resolveJSONPointer(*(absolute.Ref))
+				schema := combined.Schema
+				if schema.Ref != nil {
+					resolvedRef, err := rootCombined.resolveJSONPointer(*(schema.Ref))
 					if err != nil {
 						log.Printf("%+v", err)
 					} else if resolvedRef.Boolean != nil {
 						// don't substitute for booleans, we'll model the referenced schema with a class
-					} else if resolvedRef.Absolute.TypeIs("object") {
+					} else if resolvedRef.Schema.TypeIs("object") {
 						// don't substitute for objects, we'll model the referenced schema with a class
 					} else if context == "OneOf" {
 						// don't substitute for references inside oneOf declarations
-					} else if resolvedRef.Absolute.OneOf != nil {
+					} else if resolvedRef.Schema.OneOf != nil {
 						// don't substitute for references that contain oneOf declarations
-					} else if resolvedRef.Absolute.AdditionalProperties != nil {
+					} else if resolvedRef.Schema.AdditionalProperties != nil {
 						// don't substitute for references that look like objects
 					} else {
-						schema.Absolute.Ref = nil
-						schema.CopyProperties(resolvedRef)
+						schema.Ref = nil
+						combined.CopyProperties(resolvedRef)
 						count++
 					}
 				}
@@ -400,12 +405,12 @@ func (schema *Schema) ResolveRefs() {
 // resolveJSONPointer resolves JSON pointers.
 // This current implementation is very crude and custom for OpenAPI 2.0 schemas.
 // It panics for any pointer that it is unable to resolve.
-func (schema *Schema) resolveJSONPointer(ref string) (result *Schema, err error) {
+func (combined *Combined) resolveJSONPointer(ref string) (result *Combined, err error) {
 	parts := strings.Split(ref, "#")
 	if len(parts) == 2 {
 		documentName := parts[0] + "#"
-		if documentName == "#" && schema.Absolute.ID != nil {
-			documentName = *(schema.Absolute.ID)
+		if documentName == "#" && combined.Schema.ID != nil {
+			documentName = *(combined.Schema.ID)
 		}
 		path := parts[1]
 		document := schemas[documentName]
@@ -413,18 +418,18 @@ func (schema *Schema) resolveJSONPointer(ref string) (result *Schema, err error)
 
 		// we currently do a very limited (hard-coded) resolution of certain paths and log errors for missed cases
 		if len(pathParts) == 1 {
-			return document, nil
+			return NewCombinedWithSchema(document), nil
 		} else if len(pathParts) == 3 {
 			switch pathParts[1] {
 			case "definitions":
-				dictionary := document.Absolute.Definitions
+				dictionary := document.Definitions
 				for _, pair := range *dictionary {
 					if pair.Name == pathParts[2] {
 						result = pair.Value
 					}
 				}
 			case "properties":
-				dictionary := document.Absolute.Properties
+				dictionary := document.Properties
 				for _, pair := range *dictionary {
 					if pair.Name == pathParts[2] {
 						result = pair.Value
@@ -441,32 +446,32 @@ func (schema *Schema) resolveJSONPointer(ref string) (result *Schema, err error)
 	return result, nil
 }
 
-// ResolveAllOfs replaces "allOf" elements by merging their properties into the parent Schema.
-func (schema *Schema) ResolveAllOfs() {
-	schema.applyToSchemas(
-		func(schema *Schema, context string) {
-			if schema.Boolean != nil {
+// ResolveAllOfs replaces "allOf" elements by merging their properties into the parent Combined.
+func (combined *Combined) ResolveAllOfs() {
+	combined.applyToCombineds(
+		func(combined *Combined, context string) {
+			if combined.Boolean != nil {
 				return
 			}
-			if schema.Absolute.AllOf != nil {
-				for _, allOf := range *(schema.Absolute.AllOf) {
-					schema.CopyProperties(allOf)
+			if combined.Schema.AllOf != nil {
+				for _, allOf := range *(combined.Schema.AllOf) {
+					combined.CopyProperties(allOf)
 				}
-				schema.Absolute.AllOf = nil
+				combined.Schema.AllOf = nil
 			}
 		}, "resolveAllOfs")
 }
 
 // ResolveAnyOfs replaces all "anyOf" elements with "oneOf".
-func (schema *Schema) ResolveAnyOfs() {
-	schema.applyToSchemas(
-		func(schema *Schema, context string) {
-			if schema.Boolean != nil {
+func (combined *Combined) ResolveAnyOfs() {
+	combined.applyToCombineds(
+		func(combined *Combined, context string) {
+			if combined.Boolean != nil {
 				return
 			}
-			if schema.Absolute.AnyOf != nil {
-				schema.Absolute.OneOf = schema.Absolute.AnyOf
-				schema.Absolute.AnyOf = nil
+			if combined.Schema.AnyOf != nil {
+				combined.Schema.OneOf = combined.Schema.AnyOf
+				combined.Schema.AnyOf = nil
 			}
 		}, "resolveAnyOfs")
 }
@@ -476,18 +481,19 @@ func stringptr(input string) (output *string) {
 	return &input
 }
 
-// CopyOfficialSchemaProperty copies a named property from the official JSON Schema definition
-func (schema *Schema) CopyOfficialSchemaProperty(name string) {
-	if schema.Boolean != nil {
+// CopyOfficialCombinedProperty copies a named property from the official JSON Combined definition
+func (combined *Combined) CopyOfficialCombinedProperty(name string) {
+	if combined.Boolean != nil {
 		return
 	}
-	*schema.Absolute.Properties = append(*schema.Absolute.Properties,
-		NewNamedSchema(name, &Schema{Absolute: &Absolute{Ref: stringptr("http://json-schema.org/draft-04/schema#/properties/" + name)}}))
+	*combined.Schema.Properties = append(*combined.Schema.Properties,
+		NewNamedCombined(name, &Combined{
+			Schema: &Schema{Ref: stringptr("http://json-schema.org/draft-07/schema#/properties/" + name)}}))
 }
 
-// CopyOfficialSchemaProperties copies named properties from the official JSON Schema definition
-func (schema *Schema) CopyOfficialSchemaProperties(names []string) {
+// CopyOfficialCombinedProperties copies named properties from the official JSON Combined definition
+func (combined *Combined) CopyOfficialCombinedProperties(names []string) {
 	for _, name := range names {
-		schema.CopyOfficialSchemaProperty(name)
+		combined.CopyOfficialCombinedProperty(name)
 	}
 }

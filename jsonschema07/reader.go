@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -29,7 +30,7 @@ import (
 var schemas map[string]*Schema
 
 // NewBaseSchema builds a schema object from an embedded json representation.
-func NewBaseSchema() (schema *Schema, err error) {
+func NewBaseSchema() (*Schema, error) {
 	b, err := baseSchemaBytes()
 	if err != nil {
 		return nil, err
@@ -44,7 +45,7 @@ func NewBaseSchema() (schema *Schema, err error) {
 
 // NewSchemaFromFile reads a schema from a file.
 // Currently this assumes that schemas are stored in the source distribution of this project.
-func NewSchemaFromFile(filename string) (schema *Schema, err error) {
+func NewSchemaFromFile(filename string) (*Schema, error) {
 	file, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, err
@@ -57,30 +58,15 @@ func NewSchemaFromFile(filename string) (schema *Schema, err error) {
 	return NewSchemaFromObject(&node), nil
 }
 
-// NewSchemaFromObject constructs a schema or a boolean value from a parsed JSON object.
-func NewSchemaFromObject(v *yaml.Node) *Schema {
-	absoluteOrBoolean := &Schema{}
-	switch v.Kind {
-	case yaml.ScalarNode:
-		v2, _ := strconv.ParseBool(v.Value)
-		absoluteOrBoolean.Boolean = &v2
-	case yaml.MappingNode:
-		absoluteOrBoolean.Absolute = NewAbsoluteFromObject(v)
-	default:
-		fmt.Printf("NewSchemaFromObject: unexpected node %+v\n", v)
-	}
-	return absoluteOrBoolean
-}
-
 // NewSchemaFromObject constructs a schema from a parsed JSON object.
 // Due to the complexity of the schema representation, this is a
 // custom reader and not the standard Go JSON reader (encoding/json).
-func NewAbsoluteFromObject(jsonData *yaml.Node) *Absolute {
+func NewSchemaFromObject(jsonData *yaml.Node) *Schema {
 	switch jsonData.Kind {
 	case yaml.DocumentNode:
-		return NewAbsoluteFromObject(jsonData.Content[0])
+		return NewSchemaFromObject(jsonData.Content[0])
 	case yaml.MappingNode:
-		absolute := &Absolute{}
+		schema := &Schema{}
 
 		for i := 0; i < len(jsonData.Content); i += 2 {
 			k := jsonData.Content[i].Value
@@ -88,121 +74,123 @@ func NewAbsoluteFromObject(jsonData *yaml.Node) *Absolute {
 
 			switch k {
 			case "$id":
-				absolute.ID = stringValue(v)
+				schema.ID = stringValue(v)
 			case "$schema":
-				absolute.Schema = stringValue(v)
+				schema.Schema = stringValue(v)
 			case "$ref": // uri-reference
-				absolute.Ref = stringValue(v)
+				schema.Ref = stringValue(v)
 			case "$comment":
-				absolute.Comment = stringValue(v)
+				schema.Comment = stringValue(v)
 			case "title":
-				absolute.Title = stringValue(v)
+				schema.Title = stringValue(v)
 			case "description":
-				absolute.Description = stringValue(v)
+				schema.Description = stringValue(v)
 
 			case "default":
-				absolute.Default = v
+				schema.Default = v
 			case "readOnly":
-				absolute.ReadOnly = boolValue(v)
+				schema.ReadOnly = boolValue(v)
 			case "writeOnly":
-				absolute.WriteOnly = boolValue(v)
+				schema.WriteOnly = boolValue(v)
 			case "examples":
-				absolute.Examples = arrayOfSchemasValue(v)
+				schema.Examples = arrayOfCombinedsValue(v)
 
 			case "multipleOf":
-				absolute.MultipleOf = numberValue(v)
+				schema.MultipleOf = numberValue(v)
 			case "maximum":
-				absolute.Maximum = numberValue(v)
+				schema.Maximum = numberValue(v)
 			case "exclusiveMaximum":
-				absolute.ExclusiveMaximum = numberValue(v)
+				schema.ExclusiveMaximum = numberValue(v)
 			case "minimum":
-				absolute.Minimum = numberValue(v)
+				schema.Minimum = numberValue(v)
 			case "exclusiveMinimum":
-				absolute.ExclusiveMinimum = numberValue(v)
+				schema.ExclusiveMinimum = numberValue(v)
 
 			case "maxLength":
-				absolute.MaxLength = intValue(v)
+				schema.MaxLength = intValue(v)
 			case "minLength":
-				absolute.MinLength = intValue(v)
+				schema.MinLength = intValue(v)
 			case "pattern": // regex
-				absolute.Pattern = stringValue(v)
+				schema.Pattern = stringValue(v)
 
 			case "additionalItems":
-				absolute.AdditionalItems = NewSchemaFromObject(v)
+				schema.AdditionalItems = combinedFromObject(v)
 			case "items":
-				absolute.Items = schemaOrSchemaArrayValue(v)
+				schema.Items = schemaOrCombinedArrayValue(v)
 			case "maxItems":
-				absolute.MaxItems = intValue(v)
+				schema.MaxItems = intValue(v)
 			case "minItems":
-				absolute.MinItems = intValue(v)
+				schema.MinItems = intValue(v)
 			case "uniqueItems":
-				absolute.UniqueItems = boolValue(v)
+				schema.UniqueItems = boolValue(v)
 
 			case "contains":
-				absolute.Contains = NewSchemaFromObject(v)
+				schema.Contains = combinedFromObject(v)
 			case "maxProperties":
-				absolute.MaxProperties = intValue(v)
+				schema.MaxProperties = intValue(v)
 			case "minProperties":
-				absolute.MinProperties = intValue(v)
+				schema.MinProperties = intValue(v)
 			case "required":
-				absolute.Required = arrayOfStringsValue(v)
+				schema.Required = arrayOfStringsValue(v)
 			case "additionalProperties":
-				absolute.AdditionalProperties = NewSchemaFromObject(v)
+				schema.AdditionalProperties = combinedFromObject(v)
 			case "definitions":
-				absolute.Definitions = mapOfSchemasValue(v)
+				schema.Definitions = mapOfCombinedsValue(v)
 			case "properties":
-				absolute.Properties = mapOfSchemasValue(v)
+				schema.Properties = mapOfCombinedsValue(v)
 			case "patternProperties":
-				absolute.PatternProperties = mapOfSchemasValue(v)
+				schema.PatternProperties = mapOfCombinedsValue(v)
 			case "dependencies":
-				absolute.Dependencies = mapOfSchemasOrStringArraysValue(v)
+				schema.Dependencies = mapOfCombinedsOrStringArraysValue(v)
 			case "propertyNames":
-				absolute.PropertyNames = NewSchemaFromObject(v)
+				schema.PropertyNames = combinedFromObject(v)
 
 			case "const":
-				absolute.Const = v
+				schema.Const = v
 			case "enum":
-				absolute.Enumeration = arrayOfEnumValuesValue(v)
+				schema.Enumeration = arrayOfEnumValuesValue(v)
 			case "type":
-				absolute.Type = stringOrStringArrayValue(v)
+				schema.Type = stringOrStringArrayValue(v)
 			case "format":
-				absolute.Format = stringValue(v)
+				schema.Format = stringValue(v)
 			case "contentMediaType":
-				absolute.ContentMediaType = stringValue(v)
+				schema.ContentMediaType = stringValue(v)
 			case "contentEncoding":
-				absolute.ContentEncoding = stringValue(v)
+				schema.ContentEncoding = stringValue(v)
 
 			case "if":
-				absolute.If = NewSchemaFromObject(v)
+				schema.If = combinedFromObject(v)
 			case "then":
-				absolute.Then = NewSchemaFromObject(v)
+				schema.Then = combinedFromObject(v)
 			case "else":
-				absolute.Else = NewSchemaFromObject(v)
+				schema.Else = combinedFromObject(v)
 			case "allOf":
-				absolute.AllOf = arrayOfSchemasValue(v)
+				schema.AllOf = arrayOfCombinedsValue(v)
 			case "anyOf":
-				absolute.AnyOf = arrayOfSchemasValue(v)
+				schema.AnyOf = arrayOfCombinedsValue(v)
 			case "oneOf":
-				absolute.OneOf = arrayOfSchemasValue(v)
+				schema.OneOf = arrayOfCombinedsValue(v)
 			case "not":
-				absolute.Not = NewSchemaFromObject(v)
+				schema.Not = combinedFromObject(v)
 
 			default:
 				fmt.Printf("UNSUPPORTED (%s)\n", k)
+				//fmt.Printf("%s=>%#v", jsonData.Tag, v.Value)
+				//panic(nil)
 			}
 		}
 
-		// insert absolute in global map
-		if absolute.ID != nil {
+		// insert schema in global map
+		if schema.ID != nil {
 			if schemas == nil {
 				schemas = make(map[string]*Schema, 0)
 			}
-			schemas[*(absolute.ID)] = NewSchemaWithAbsolute(absolute)
+			schemas[*(schema.ID)] = schema
 		}
-		return absolute
+		return schema
 
 	default:
-		fmt.Printf("absoluteValue: unexpected node %+v\n", jsonData)
+		fmt.Printf("schemaValue: unexpected node %+v\n", jsonData)
 	}
 
 	return nil
@@ -210,15 +198,31 @@ func NewAbsoluteFromObject(jsonData *yaml.Node) *Absolute {
 
 //
 // BUILDERS
-// The following methods build elements of Schemas from interface{} values.
+// The following methods build elements of Combineds from interface{} values.
 // Each returns nil if it is unable to build the desired element.
 //
+
+// combinedFromObject constructs a schema or a boolean value from a parsed JSON object.
+func combinedFromObject(v *yaml.Node) *Combined {
+	schemaOrBoolean := &Combined{}
+	switch v.Kind {
+	case yaml.ScalarNode:
+		v2, _ := strconv.ParseBool(v.Value)
+		schemaOrBoolean.Boolean = &v2
+	case yaml.MappingNode:
+		schemaOrBoolean.Schema = NewSchemaFromObject(v)
+	default:
+		fmt.Printf("NewSchemaFromObject: unexpected node %+v\n", v)
+	}
+	return schemaOrBoolean
+}
 
 // Gets the string value of an interface{} value if possible.
 func stringValue(v *yaml.Node) *string {
 	switch v.Kind {
 	case yaml.ScalarNode:
-		return &v.Value
+		str := strings.Replace(v.Value, "\n", "\\n", -1)
+		return &str
 	default:
 		fmt.Printf("stringValue: unexpected node %+v\n", v)
 	}
@@ -310,108 +314,70 @@ func arrayValue(v *yaml.Node) *[]interface{} {
 	return nil
 }
 
-// Gets the map value of an interface{} value if possible.
-func mapValue(v *yaml.Node) *map[string]interface{} {
+// Gets a map of Combineds from an interface{} value if possible.
+func mapOfCombinedsValue(v *yaml.Node) *[]*NamedCombined {
 	switch v.Kind {
 	case yaml.MappingNode:
-		m := make(map[string]interface{})
+		m := make([]*NamedCombined, 0)
 		for i := 0; i < len(v.Content); i += 2 {
 			k2 := v.Content[i].Value
 			v2 := v.Content[i+1]
-			switch v2.Kind {
-			case yaml.ScalarNode:
-				m[k2] = v2.Value
-			default:
-				fmt.Printf("mapValue: unexpected node %+v\n", v2)
-			}
-		}
-		return &m
-	default:
-		fmt.Printf("mapValue: unexpected node %+v\n", v)
-	}
-	return nil
-}
-
-// Gets the null value of an interface{} value if possible.
-func nullValue(v *yaml.Node) *interface{} {
-	switch v.Kind {
-	case yaml.ScalarNode:
-		switch v.Tag {
-		case "!!null":
-			return nil
-		default:
-			fmt.Printf("nullValue: unexpected node %+v\n", v)
-		}
-	default:
-		fmt.Printf("nullValue: unexpected node %+v\n", v)
-	}
-	return nil
-}
-
-// Gets a map of Schemas from an interface{} value if possible.
-func mapOfSchemasValue(v *yaml.Node) *[]*NamedSchema {
-	switch v.Kind {
-	case yaml.MappingNode:
-		m := make([]*NamedSchema, 0)
-		for i := 0; i < len(v.Content); i += 2 {
-			k2 := v.Content[i].Value
-			v2 := v.Content[i+1]
-			pair := &NamedSchema{Name: k2, Value: NewSchemaFromObject(v2)}
+			pair := &NamedCombined{Name: k2, Value: combinedFromObject(v2)}
 			m = append(m, pair)
 		}
 		return &m
 	default:
-		fmt.Printf("mapOfSchemasValue: unexpected node %+v\n", v)
+		fmt.Printf("mapOfCombinedsValue: unexpected node %+v\n", v)
 	}
 	return nil
 }
 
-// Gets an array of Schemas from an interface{} value if possible.
-func arrayOfSchemasValue(v *yaml.Node) *[]*Schema {
+// Gets an array of Combineds from an interface{} value if possible.
+func arrayOfCombinedsValue(v *yaml.Node) *[]*Combined {
 	switch v.Kind {
 	case yaml.SequenceNode:
-		m := make([]*Schema, 0)
+		m := make([]*Combined, 0)
 		for _, v2 := range v.Content {
 			switch v2.Kind {
 			case yaml.MappingNode:
-				s := NewSchemaFromObject(v2)
+				s := combinedFromObject(v2)
 				m = append(m, s)
 			default:
-				fmt.Printf("arrayOfSchemaOrBooleansValue: unexpected node %+v\n", v2)
+				fmt.Printf("arrayOfCombinedOrBooleansValue: unexpected node %+v\n", v2)
 			}
 		}
 		return &m
 	case yaml.MappingNode:
-		m := make([]*Schema, 0)
-		s := NewSchemaFromObject(v)
+		m := make([]*Combined, 0)
+		s := combinedFromObject(v)
 		m = append(m, s)
 		return &m
 	default:
-		fmt.Printf("arrayOfSchemaOrBooleansValue: unexpected node %+v\n", v)
+		fmt.Printf("arrayOfCombinedOrBooleansValue: unexpected node %+v\n", v)
 	}
 	return nil
 }
 
-// Gets a Schema or an array of Schemas from an interface{} value if possible.
-func schemaOrSchemaArrayValue(v *yaml.Node) *SchemaOrSchemaArray {
+// Gets a Combined or an array of Combineds from an interface{} value if possible.
+func schemaOrCombinedArrayValue(v *yaml.Node) *CombinedOrCombinedArray {
 	switch v.Kind {
 	case yaml.SequenceNode:
-		m := make([]*Schema, 0)
+		m := make([]*Combined, 0)
 		for _, v2 := range v.Content {
 			switch v2.Kind {
 			case yaml.MappingNode:
-				s := NewSchemaFromObject(v2)
+				s := combinedFromObject(v2)
 				m = append(m, s)
 			default:
-				fmt.Printf("schemaOrSchemaArrayValue: unexpected node %+v\n", v2)
+				fmt.Printf("schemaOrCombinedArrayValue: unexpected node %+v\n", v2)
 			}
 		}
-		return &SchemaOrSchemaArray{SchemaArray: &m}
+		return &CombinedOrCombinedArray{CombinedArray: &m}
 	case yaml.MappingNode:
-		s := NewSchemaFromObject(v)
-		return &SchemaOrSchemaArray{Schema: s}
+		s := combinedFromObject(v)
+		return &CombinedOrCombinedArray{Combined: s}
 	default:
-		fmt.Printf("schemaOrSchemaArrayValue: unexpected node %+v\n", v)
+		fmt.Printf("schemaOrCombinedArrayValue: unexpected node %+v\n", v)
 	}
 	return nil
 }
@@ -493,8 +459,8 @@ func arrayOfEnumValuesValue(v *yaml.Node) *[]SchemaEnumValue {
 }
 
 // Gets a map of schemas or string arrays from an interface{} value if possible.
-func mapOfSchemasOrStringArraysValue(v *yaml.Node) *[]*NamedSchemaOrStringArray {
-	m := make([]*NamedSchemaOrStringArray, 0)
+func mapOfCombinedsOrStringArraysValue(v *yaml.Node) *[]*NamedCombinedOrStringArray {
+	m := make([]*NamedCombinedOrStringArray, 0)
 	switch v.Kind {
 	case yaml.MappingNode:
 		for i := 0; i < len(v.Content); i += 2 {
@@ -508,34 +474,19 @@ func mapOfSchemasOrStringArraysValue(v *yaml.Node) *[]*NamedSchemaOrStringArray 
 					case yaml.ScalarNode:
 						a = append(a, v3.Value)
 					default:
-						fmt.Printf("mapOfSchemasOrStringArraysValue: unexpected node %+v\n", v3)
+						fmt.Printf("mapOfCombinedsOrStringArraysValue: unexpected node %+v\n", v3)
 					}
 				}
-				s := &SchemaOrStringArray{}
+				s := &CombinedOrStringArray{}
 				s.StringArray = &a
-				pair := &NamedSchemaOrStringArray{Name: k2, Value: s}
+				pair := &NamedCombinedOrStringArray{Name: k2, Value: s}
 				m = append(m, pair)
 			default:
-				fmt.Printf("mapOfSchemasOrStringArraysValue: unexpected node %+v\n", v2)
+				fmt.Printf("mapOfCombinedsOrStringArraysValue: unexpected node %+v\n", v2)
 			}
 		}
 	default:
-		fmt.Printf("mapOfSchemasOrStringArraysValue: unexpected node %+v\n", v)
+		fmt.Printf("mapOfCombinedsOrStringArraysValue: unexpected node %+v\n", v)
 	}
 	return &m
-}
-
-// Gets a schema or a boolean value from an interface{} value if possible.
-func schemaOrBooleanValue(v *yaml.Node) *Schema {
-	schemaOrBoolean := &Schema{}
-	switch v.Kind {
-	case yaml.ScalarNode:
-		v2, _ := strconv.ParseBool(v.Value)
-		schemaOrBoolean.Boolean = &v2
-	case yaml.MappingNode:
-		schemaOrBoolean.Absolute = NewAbsoluteFromObject(v)
-	default:
-		fmt.Printf("schemaOrBooleanValue: unexpected node %+v\n", v)
-	}
-	return schemaOrBoolean
 }
