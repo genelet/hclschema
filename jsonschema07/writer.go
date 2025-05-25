@@ -248,11 +248,87 @@ func nodeForInt64(value int64) *yaml.Node {
 	}
 }
 
+func nodeForNull(value interface{}) *yaml.Node {
+	return &yaml.Node{
+		Kind:  yaml.ScalarNode,
+		Tag:   "!!null",
+		Value: "null",
+	}
+}
+
+func nodeForNumber(value *SchemaNumber) *yaml.Node {
+	if value.Integer != nil {
+		return nodeForInt64(*value.Integer)
+	} else if value.Float != nil {
+		return nodeForFloat64(*value.Float)
+	} else {
+		return nil
+	}
+}
+
 func nodeForFloat64(value float64) *yaml.Node {
 	return &yaml.Node{
 		Kind:  yaml.ScalarNode,
 		Tag:   "!!float",
 		Value: fmt.Sprintf("%f", value),
+	}
+}
+
+func nodeForArray(value []interface{}) *yaml.Node {
+	content := make([]*yaml.Node, 0)
+	for _, item := range value {
+		switch item.(type) {
+		case string:
+			content = append(content, nodeForString(item.(string)))
+		case int:
+			content = append(content, nodeForInt64(int64(item.(int))))
+		case int64:
+			content = append(content, nodeForInt64(item.(int64)))
+		case bool:
+			content = append(content, nodeForBoolean(item.(bool)))
+		case float64:
+			content = append(content, nodeForFloat64(item.(float64)))
+		case nil:
+			content = append(content, nodeForNull(item))
+		default:
+			fmt.Printf("nodeForArray: unexpected type %T\n", item)
+		}
+	}
+	return &yaml.Node{
+		Kind:    yaml.SequenceNode,
+		Content: content,
+	}
+}
+
+func nodeForMap(value map[string]interface{}) *yaml.Node {
+	content := make([]*yaml.Node, 0)
+	for key, item := range value {
+		switch item.(type) {
+		case string:
+			content = append(content, nodeForString(key))
+			content = append(content, nodeForString(item.(string)))
+		case int:
+			content = append(content, nodeForString(key))
+			content = append(content, nodeForInt64(int64(item.(int))))
+		case int64:
+			content = append(content, nodeForString(key))
+			content = append(content, nodeForInt64(item.(int64)))
+		case bool:
+			content = append(content, nodeForString(key))
+			content = append(content, nodeForBoolean(item.(bool)))
+		case float64:
+			content = append(content, nodeForString(key))
+			content = append(content, nodeForFloat64(item.(float64)))
+		case nil:
+			content = append(content, nodeForString(key))
+			content = append(content, nodeForNull(item))
+		default:
+			fmt.Printf("nodeForMap: unexpected type %T\n", item)
+		}
+	}
+	return &yaml.Node{
+		Kind:    yaml.MappingNode,
+		Content: content,
 	}
 }
 
@@ -265,17 +341,12 @@ func appendPair(nodes []*yaml.Node, name string, value *yaml.Node) []*yaml.Node 
 func (absolute *Absolute) nodeValue() *yaml.Node {
 	n := &yaml.Node{Kind: yaml.MappingNode}
 	content := make([]*yaml.Node, 0)
-	if absolute.Title != nil {
-		content = appendPair(content, "title", nodeForString(*absolute.Title))
-	}
 	if absolute.ID != nil {
 		switch strings.TrimSuffix(*absolute.Schema, "#") {
 		case "http://json-schema.org/draft-07/schema":
 			fallthrough
 		case "#":
 			fallthrough
-		case "":
-			content = appendPair(content, "id", nodeForString(*absolute.ID))
 		default:
 			content = appendPair(content, "$id", nodeForString(*absolute.ID))
 		}
@@ -283,39 +354,32 @@ func (absolute *Absolute) nodeValue() *yaml.Node {
 	if absolute.Schema != nil {
 		content = appendPair(content, "$schema", nodeForString(*absolute.Schema))
 	}
+	if absolute.Ref != nil {
+		content = appendPair(content, "$ref", nodeForString(*absolute.Ref))
+	}
+	if absolute.Comment != nil {
+		content = appendPair(content, "$comment", nodeForString(*absolute.Comment))
+	}
+	if absolute.Title != nil {
+		content = appendPair(content, "title", nodeForString(*absolute.Title))
+	}
+	if absolute.Description != nil {
+		content = appendPair(content, "description", nodeForString(*absolute.Description))
+	}
+
+	if absolute.Default != nil {
+		content = appendPair(content, "default", absolute.Default)
+	}
 	if absolute.ReadOnly != nil && *absolute.ReadOnly {
 		content = appendPair(content, "readOnly", nodeForBoolean(*absolute.ReadOnly))
 	}
 	if absolute.WriteOnly != nil && *absolute.WriteOnly {
 		content = appendPair(content, "writeOnly", nodeForBoolean(*absolute.WriteOnly))
 	}
-	if absolute.Type != nil {
-		content = appendPair(content, "type", absolute.Type.nodeValue())
+	if absolute.Examples != nil {
+		content = appendPair(content, "examples", nodeForSchemaArray(*absolute.Examples))
 	}
-	if absolute.Items != nil {
-		content = appendPair(content, "items", absolute.Items.nodeValue())
-	}
-	if absolute.Description != nil {
-		content = appendPair(content, "description", nodeForString(*absolute.Description))
-	}
-	if absolute.Required != nil {
-		content = appendPair(content, "required", nodeForStringArray(*absolute.Required))
-	}
-	if absolute.AdditionalProperties != nil {
-		content = appendPair(content, "additionalProperties", absolute.AdditionalProperties.nodeValue())
-	}
-	if absolute.PatternProperties != nil {
-		content = appendPair(content, "patternProperties", nodeForNamedSchemaArray(absolute.PatternProperties))
-	}
-	if absolute.Properties != nil {
-		content = appendPair(content, "properties", nodeForNamedSchemaArray(absolute.Properties))
-	}
-	if absolute.Dependencies != nil {
-		content = appendPair(content, "dependencies", nodeForNamedSchemaOrStringArray(absolute.Dependencies))
-	}
-	if absolute.Ref != nil {
-		content = appendPair(content, "$ref", nodeForString(*absolute.Ref))
-	}
+
 	if absolute.MultipleOf != nil {
 		content = appendPair(content, "multipleOf", absolute.MultipleOf.nodeValue())
 	}
@@ -331,6 +395,7 @@ func (absolute *Absolute) nodeValue() *yaml.Node {
 	if absolute.ExclusiveMinimum != nil {
 		content = appendPair(content, "exclusiveMinimum", absolute.ExclusiveMinimum.nodeValue())
 	}
+
 	if absolute.MaxLength != nil {
 		content = appendPair(content, "maxLength", nodeForInt64(*absolute.MaxLength))
 	}
@@ -340,8 +405,12 @@ func (absolute *Absolute) nodeValue() *yaml.Node {
 	if absolute.Pattern != nil {
 		content = appendPair(content, "pattern", nodeForString(*absolute.Pattern))
 	}
+
 	if absolute.AdditionalItems != nil {
 		content = appendPair(content, "additionalItems", absolute.AdditionalItems.nodeValue())
+	}
+	if absolute.Items != nil {
+		content = appendPair(content, "items", absolute.Items.nodeValue())
 	}
 	if absolute.MaxItems != nil {
 		content = appendPair(content, "maxItems", nodeForInt64(*absolute.MaxItems))
@@ -352,14 +421,65 @@ func (absolute *Absolute) nodeValue() *yaml.Node {
 	if absolute.UniqueItems != nil {
 		content = appendPair(content, "uniqueItems", nodeForBoolean(*absolute.UniqueItems))
 	}
+
+	if absolute.Contains != nil {
+		content = appendPair(content, "contains", absolute.Contains.nodeValue())
+	}
 	if absolute.MaxProperties != nil {
 		content = appendPair(content, "maxProperties", nodeForInt64(*absolute.MaxProperties))
 	}
 	if absolute.MinProperties != nil {
 		content = appendPair(content, "minProperties", nodeForInt64(*absolute.MinProperties))
 	}
+	if absolute.Required != nil {
+		content = appendPair(content, "required", nodeForStringArray(*absolute.Required))
+	}
+	if absolute.AdditionalProperties != nil {
+		content = appendPair(content, "additionalProperties", absolute.AdditionalProperties.nodeValue())
+	}
+	if absolute.Definitions != nil {
+		content = appendPair(content, "definitions", nodeForNamedSchemaArray(absolute.Definitions))
+	}
+	if absolute.Properties != nil {
+		content = appendPair(content, "properties", nodeForNamedSchemaArray(absolute.Properties))
+	}
+	if absolute.PatternProperties != nil {
+		content = appendPair(content, "patternProperties", nodeForNamedSchemaArray(absolute.PatternProperties))
+	}
+	if absolute.Dependencies != nil {
+		content = appendPair(content, "dependencies", nodeForNamedSchemaOrStringArray(absolute.Dependencies))
+	}
+	if absolute.PropertyNames != nil {
+		content = appendPair(content, "propertyNames", absolute.PropertyNames.nodeValue())
+	}
+
+	if absolute.Const != nil {
+		content = appendPair(content, "const", absolute.Const)
+	}
 	if absolute.Enumeration != nil {
 		content = appendPair(content, "enum", nodeForSchemaEnumArray(absolute.Enumeration))
+	}
+	if absolute.Type != nil {
+		content = appendPair(content, "type", absolute.Type.nodeValue())
+	}
+	if absolute.Format != nil {
+		content = appendPair(content, "format", nodeForString(*absolute.Format))
+	}
+	if absolute.ContentMediaType != nil {
+		content = appendPair(content, "contentMediaType", nodeForString(*absolute.ContentMediaType))
+	}
+	if absolute.ContentEncoding != nil {
+		content = appendPair(content, "contentEncoding", nodeForString(*absolute.ContentEncoding))
+	}
+
+	if absolute.If != nil {
+		content = appendPair(content, "if", absolute.If.nodeValue())
+	}
+	if absolute.Then != nil {
+		content = appendPair(content, "then", absolute.Then.nodeValue())
+	}
+	if absolute.Else != nil {
+		content = appendPair(content, "else", absolute.Else.nodeValue())
 	}
 	if absolute.AllOf != nil {
 		content = appendPair(content, "allOf", nodeForSchemaArray(*absolute.AllOf))
@@ -373,15 +493,7 @@ func (absolute *Absolute) nodeValue() *yaml.Node {
 	if absolute.Not != nil {
 		content = appendPair(content, "not", absolute.Not.nodeValue())
 	}
-	if absolute.Definitions != nil {
-		content = appendPair(content, "definitions", nodeForNamedSchemaArray(absolute.Definitions))
-	}
-	if absolute.Default != nil {
-		// m = append(m, yaml.MapItem{Key: "default", Value: *absolute.Default})
-	}
-	if absolute.Format != nil {
-		content = appendPair(content, "format", nodeForString(*absolute.Format))
-	}
+
 	n.Content = content
 	return n
 }

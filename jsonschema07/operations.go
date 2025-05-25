@@ -27,40 +27,59 @@ import (
 
 // IsEmpty returns true if no members of the Schema are specified.
 func (absolute *Absolute) IsEmpty() bool {
-	return (absolute.Schema == nil) &&
-		(absolute.ID == nil) &&
+	return (absolute.ID == nil) &&
+		(absolute.Comment == nil) &&
+		(absolute.Schema == nil) &&
+		(absolute.Ref == nil) &&
+		(absolute.Title == nil) &&
+		(absolute.Description == nil) &&
+
+		(absolute.Default == nil) &&
+		(absolute.ReadOnly == nil) &&
+		(absolute.WriteOnly == nil) &&
+		(absolute.Examples == nil) &&
+
 		(absolute.MultipleOf == nil) &&
 		(absolute.Maximum == nil) &&
 		(absolute.ExclusiveMaximum == nil) &&
 		(absolute.Minimum == nil) &&
 		(absolute.ExclusiveMinimum == nil) &&
+
 		(absolute.MaxLength == nil) &&
 		(absolute.MinLength == nil) &&
 		(absolute.Pattern == nil) &&
+
 		(absolute.AdditionalItems == nil) &&
 		(absolute.Items == nil) &&
 		(absolute.MaxItems == nil) &&
 		(absolute.MinItems == nil) &&
 		(absolute.UniqueItems == nil) &&
+
+		(absolute.Contains == nil) &&
 		(absolute.MaxProperties == nil) &&
 		(absolute.MinProperties == nil) &&
 		(absolute.Required == nil) &&
 		(absolute.AdditionalProperties == nil) &&
+		(absolute.Definitions == nil) &&
 		(absolute.Properties == nil) &&
 		(absolute.PatternProperties == nil) &&
 		(absolute.Dependencies == nil) &&
+		(absolute.PropertyNames == nil) &&
+
+		(absolute.Const == nil) &&
 		(absolute.Enumeration == nil) &&
 		(absolute.Type == nil) &&
+		(absolute.Format == nil) &&
+		(absolute.ContentMediaType == nil) &&
+		(absolute.ContentEncoding == nil) &&
+
+		(absolute.If == nil) &&
+		(absolute.Then == nil) &&
+		(absolute.Else == nil) &&
 		(absolute.AllOf == nil) &&
 		(absolute.AnyOf == nil) &&
 		(absolute.OneOf == nil) &&
-		(absolute.Not == nil) &&
-		(absolute.Definitions == nil) &&
-		(absolute.Title == nil) &&
-		(absolute.Description == nil) &&
-		(absolute.Default == nil) &&
-		(absolute.Format == nil) &&
-		(absolute.Ref == nil)
+		(absolute.Not == nil)
 }
 
 // IsEqual returns true if two schemas are equal.
@@ -78,11 +97,9 @@ func (schema *Schema) applyToSchemas(operation SchemaOperation, context string) 
 	}
 
 	absolute := schema.Absolute
+
 	if absolute.AdditionalItems != nil {
-		s := absolute.AdditionalItems
-		if s != nil {
-			s.applyToSchemas(operation, "AdditionalItems")
-		}
+		absolute.AdditionalItems.applyToSchemas(operation, "AdditionalItems")
 	}
 
 	if absolute.Items != nil {
@@ -95,13 +112,20 @@ func (schema *Schema) applyToSchemas(operation SchemaOperation, context string) 
 		}
 	}
 
-	if absolute.AdditionalProperties != nil {
-		s := absolute.AdditionalProperties
-		if s != nil {
-			s.applyToSchemas(operation, "AdditionalProperties")
-		}
+	if absolute.Contains != nil {
+		absolute.Contains.applyToSchemas(operation, "Contains")
 	}
 
+	if absolute.AdditionalProperties != nil {
+		absolute.AdditionalProperties.applyToSchemas(operation, "AdditionalProperties")
+	}
+
+	if absolute.Definitions != nil {
+		for _, pair := range *(absolute.Definitions) {
+			s := pair.Value
+			s.applyToSchemas(operation, "Definitions")
+		}
+	}
 	if absolute.Properties != nil {
 		for _, pair := range *(absolute.Properties) {
 			s := pair.Value
@@ -125,6 +149,20 @@ func (schema *Schema) applyToSchemas(operation SchemaOperation, context string) 
 		}
 	}
 
+	if absolute.PropertyNames != nil {
+		absolute.PropertyNames.applyToSchemas(operation, "PropertyNames")
+	}
+
+	if absolute.If != nil {
+		absolute.If.applyToSchemas(operation, "If")
+	}
+	if absolute.Then != nil {
+		absolute.Then.applyToSchemas(operation, "Then")
+	}
+	if absolute.Else != nil {
+		absolute.Else.applyToSchemas(operation, "Else")
+	}
+
 	if absolute.AllOf != nil {
 		for _, s := range *(absolute.AllOf) {
 			s.applyToSchemas(operation, "AllOf")
@@ -142,13 +180,6 @@ func (schema *Schema) applyToSchemas(operation SchemaOperation, context string) 
 	}
 	if absolute.Not != nil {
 		absolute.Not.applyToSchemas(operation, "Not")
-	}
-
-	if absolute.Definitions != nil {
-		for _, pair := range *(absolute.Definitions) {
-			s := pair.Value
-			s.applyToSchemas(operation, "Definitions")
-		}
 	}
 
 	operation(schema, context)
@@ -169,6 +200,32 @@ func (absolute *Absolute) CopyProperties(source *Absolute) {
 	if source.ID != nil {
 		absolute.ID = source.ID
 	}
+	if source.Comment != nil {
+		absolute.Comment = source.Comment
+	}
+	if source.Ref != nil {
+		absolute.Ref = source.Ref
+	}
+	if source.Title != nil {
+		absolute.Title = source.Title
+	}
+	if source.Description != nil {
+		absolute.Description = source.Description
+	}
+
+	if source.Default != nil {
+		absolute.Default = source.Default
+	}
+	if source.ReadOnly != nil {
+		absolute.ReadOnly = source.ReadOnly
+	}
+	if source.WriteOnly != nil {
+		absolute.WriteOnly = source.WriteOnly
+	}
+	if source.Examples != nil {
+		absolute.Examples = source.Examples
+	}
+
 	if source.MultipleOf != nil {
 		absolute.MultipleOf = source.MultipleOf
 	}
@@ -184,6 +241,7 @@ func (absolute *Absolute) CopyProperties(source *Absolute) {
 	if source.ExclusiveMinimum != nil {
 		absolute.ExclusiveMinimum = source.ExclusiveMinimum
 	}
+
 	if source.MaxLength != nil {
 		absolute.MaxLength = source.MaxLength
 	}
@@ -193,6 +251,7 @@ func (absolute *Absolute) CopyProperties(source *Absolute) {
 	if source.Pattern != nil {
 		absolute.Pattern = source.Pattern
 	}
+
 	if source.AdditionalItems != nil {
 		absolute.AdditionalItems = source.AdditionalItems
 	}
@@ -208,6 +267,10 @@ func (absolute *Absolute) CopyProperties(source *Absolute) {
 	if source.UniqueItems != nil {
 		absolute.UniqueItems = source.UniqueItems
 	}
+
+	if source.Contains != nil {
+		absolute.Contains = source.Contains
+	}
 	if source.MaxProperties != nil {
 		absolute.MaxProperties = source.MaxProperties
 	}
@@ -220,6 +283,9 @@ func (absolute *Absolute) CopyProperties(source *Absolute) {
 	if source.AdditionalProperties != nil {
 		absolute.AdditionalProperties = source.AdditionalProperties
 	}
+	if source.Definitions != nil {
+		absolute.Definitions = source.Definitions
+	}
 	if source.Properties != nil {
 		absolute.Properties = source.Properties
 	}
@@ -229,11 +295,37 @@ func (absolute *Absolute) CopyProperties(source *Absolute) {
 	if source.Dependencies != nil {
 		absolute.Dependencies = source.Dependencies
 	}
+	if source.PropertyNames != nil {
+		absolute.PropertyNames = source.PropertyNames
+	}
+
+	if source.Const != nil {
+		absolute.Const = source.Const
+	}
 	if source.Enumeration != nil {
 		absolute.Enumeration = source.Enumeration
 	}
 	if source.Type != nil {
 		absolute.Type = source.Type
+	}
+	if source.Format != nil {
+		absolute.Format = source.Format
+	}
+	if source.ContentMediaType != nil {
+		absolute.ContentMediaType = source.ContentMediaType
+	}
+	if source.ContentEncoding != nil {
+		absolute.ContentEncoding = source.ContentEncoding
+	}
+
+	if source.If != nil {
+		absolute.If = source.If
+	}
+	if source.Then != nil {
+		absolute.Then = source.Then
+	}
+	if source.Else != nil {
+		absolute.Else = source.Else
 	}
 	if source.AllOf != nil {
 		absolute.AllOf = source.AllOf
@@ -246,24 +338,6 @@ func (absolute *Absolute) CopyProperties(source *Absolute) {
 	}
 	if source.Not != nil {
 		absolute.Not = source.Not
-	}
-	if source.Definitions != nil {
-		absolute.Definitions = source.Definitions
-	}
-	if source.Title != nil {
-		absolute.Title = source.Title
-	}
-	if source.Description != nil {
-		absolute.Description = source.Description
-	}
-	if source.Default != nil {
-		absolute.Default = source.Default
-	}
-	if source.Format != nil {
-		absolute.Format = source.Format
-	}
-	if source.Ref != nil {
-		absolute.Ref = source.Ref
 	}
 }
 

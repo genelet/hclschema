@@ -18,73 +18,84 @@ package jsonschema07
 
 import "gopkg.in/yaml.v3"
 
+// Schema represents a value that can be either a Absolute or a Boolean.
+type Schema struct {
+	Absolute *Absolute
+	Boolean  *bool
+}
+
+// NewSchemaWithAbsolute creates and returns a new object
+func NewSchemaWithAbsolute(s *Absolute) *Schema {
+	result := &Schema{}
+	result.Absolute = s
+	return result
+}
+
+// NewSchemaWithBoolean creates and returns a new object
+func NewSchemaWithBoolean(b bool) *Schema {
+	result := &Schema{}
+	result.Boolean = &b
+	return result
+}
+
 // The Absolute struct models a JSON Schema and, because schemas are
 // defined hierarchically, contains many references to itself.
 // All fields are pointers and are nil if the associated values
 // are not specified.
 type Absolute struct {
-	Schema *string // $schema
-	ID     *string // $id keyword used for $ref resolution scope
-	Ref    *string // $ref, i.e. JSON Pointers
-	Title  *string
+	ID          *string `json:"$id,omitempty"`
+	Schema      *string `json:"$schema,omitempty"`
+	Ref         *string `json:"$ref,omitempty"`
+	Comment     *string `json:"$comment,omitempty"`
+	Title       *string `json:"title,omitempty"`
+	Description *string `json:"description,omitempty"`
 
-	ReadOnly  *bool
-	WriteOnly *bool
-	Examples  *[]*Schema
+	Default   *yaml.Node `json:"default,omitempty"`
+	ReadOnly  *bool      `json:"readOnly,omitempty"`
+	WriteOnly *bool      `json:"writeOnly,omitempty"`
+	Examples  *[]*Schema `json:"examples,omitempty"`
 
-	// http://json-schema.org/latest/json-schema-validation.html
-	// 5.1.  Validation keywords for numeric instances (number and integer)
-	MultipleOf       *SchemaNumber
-	Maximum          *SchemaNumber
-	ExclusiveMaximum *SchemaNumber
-	Minimum          *SchemaNumber
-	ExclusiveMinimum *SchemaNumber
+	MultipleOf       *SchemaNumber `json:"multipleOf,omitempty"`
+	Maximum          *SchemaNumber `json:"maximum,omitempty"`
+	ExclusiveMaximum *SchemaNumber `json:"exclusiveMaximum,omitempty"`
+	Minimum          *SchemaNumber `json:"minimum,omitempty"`
+	ExclusiveMinimum *SchemaNumber `json:"exclusiveMinimum,omitempty"`
 
-	// 5.2.  Validation keywords for strings
-	MaxLength *int64
-	MinLength *int64
-	Pattern   *string
+	MaxLength *int64  `json:"maxLength,omitempty"`
+	MinLength *int64  `json:"minLength,omitempty"`
+	Pattern   *string `json:"pattern,omitempty"`
 
-	// 5.3.  Validation keywords for arrays
-	AdditionalItems *Schema
-	Items           *SchemaOrSchemaArray
-	MaxItems        *int64
-	MinItems        *int64
-	UniqueItems     *bool
+	AdditionalItems *Schema              `json:"additionalItems,omitempty"`
+	Items           *SchemaOrSchemaArray `json:"items,omitempty"`
+	MaxItems        *int64               `json:"maxItems,omitempty"`
+	MinItems        *int64               `json:"minItems,omitempty"`
+	UniqueItems     *bool                `json:"uniqueItems,omitempty"`
 
-	// 5.4.  Validation keywords for objects
-	MaxProperties        *int64
-	MinProperties        *int64
-	Required             *[]string
-	AdditionalProperties *Schema
-	Properties           *[]*NamedSchema
-	PatternProperties    *[]*NamedSchema
-	Dependencies         *[]*NamedSchemaOrStringArray
+	Contains             *Schema                      `json:"contains,omitempty"`
+	MaxProperties        *int64                       `json:"maxProperties,omitempty"`
+	MinProperties        *int64                       `json:"minProperties,omitempty"`
+	Required             *[]string                    `json:"required,omitempty"`
+	AdditionalProperties *Schema                      `json:"additionalProperties,omitempty"`
+	Definitions          *[]*NamedSchema              `json:"definitions,omitempty"`
+	Properties           *[]*NamedSchema              `json:"properties,omitempty"`
+	PatternProperties    *[]*NamedSchema              `json:"patternProperties,omitempty"`
+	Dependencies         *[]*NamedSchemaOrStringArray `json:"dependencies,omitempty"`
+	PropertyNames        *Schema                      `json:"propertyNames,omitempty"`
 
-	// 5.5.  Validation keywords for any instance type
-	Enumeration   *[]SchemaEnumValue
-	Type          *StringOrStringArray
-	AllOf         *[]*Schema
-	AnyOf         *[]*Schema
-	OneOf         *[]*Schema
-	Not           *Schema
-	Definitions   *[]*NamedSchema
-	Contains      *Schema
-	PropertyNames *Schema
-	If            *Schema
-	Then          *Schema
-	Else          *Schema
+	Const            *yaml.Node `json:"const,omitempty"`
+	Enumeration      *[]SchemaEnumValue
+	Type             *StringOrStringArray `json:"type,omitempty"`
+	Format           *string              `json:"format,omitempty"`
+	ContentMediaType *string              `json:"contentMediaType,omitempty"`
+	ContentEncoding  *string              `json:"contentEncoding,omitempty"`
 
-	// 6.  Metadata keywords
-	Comment     *string
-	Description *string
-	Default     *yaml.Node
-
-	// 7.  Semantic validation with "format"
-	Format           *string
-	ContentMediaType *string
-	ContentEncoding  *string
-	Const            *bool
+	If    *Schema    `json:"if,omitempty"`
+	Then  *Schema    `json:"then,omitempty"`
+	Else  *Schema    `json:"else,omitempty"`
+	AllOf *[]*Schema `json:"allOf,omitempty"`
+	AnyOf *[]*Schema `json:"anyOf,omitempty"`
+	OneOf *[]*Schema `json:"oneOf,omitempty"`
+	Not   *Schema    `json:"not,omitempty"`
 }
 
 // These helper structs represent "combination" types that generally can
@@ -108,26 +119,6 @@ func NewSchemaNumberWithInteger(i int64) *SchemaNumber {
 func NewSchemaNumberWithFloat(f float64) *SchemaNumber {
 	result := &SchemaNumber{}
 	result.Float = &f
-	return result
-}
-
-// Schema represents a value that can be either a Absolute or a Boolean.
-type Schema struct {
-	Absolute *Absolute
-	Boolean  *bool
-}
-
-// NewSchemaWithAbsolute creates and returns a new object
-func NewSchemaWithAbsolute(s *Absolute) *Schema {
-	result := &Schema{}
-	result.Absolute = s
-	return result
-}
-
-// NewSchemaWithBoolean creates and returns a new object
-func NewSchemaWithBoolean(b bool) *Schema {
-	result := &Schema{}
-	result.Boolean = &b
 	return result
 }
 

@@ -99,18 +99,17 @@ func NewAbsoluteFromObject(jsonData *yaml.Node) *Absolute {
 				absolute.Title = stringValue(v)
 			case "description":
 				absolute.Description = stringValue(v)
+
 			case "default":
 				absolute.Default = v
-
 			case "readOnly":
 				absolute.ReadOnly = boolValue(v)
 			case "writeOnly":
 				absolute.WriteOnly = boolValue(v)
-
 			case "examples":
 				absolute.Examples = arrayOfSchemasValue(v)
 
-			case "multipleOf": // "exclusiveMinimum": 0
+			case "multipleOf":
 				absolute.MultipleOf = numberValue(v)
 			case "maximum":
 				absolute.Maximum = numberValue(v)
@@ -139,6 +138,8 @@ func NewAbsoluteFromObject(jsonData *yaml.Node) *Absolute {
 			case "uniqueItems":
 				absolute.UniqueItems = boolValue(v)
 
+			case "contains":
+				absolute.Contains = NewSchemaFromObject(v)
 			case "maxProperties":
 				absolute.MaxProperties = intValue(v)
 			case "minProperties":
@@ -147,18 +148,36 @@ func NewAbsoluteFromObject(jsonData *yaml.Node) *Absolute {
 				absolute.Required = arrayOfStringsValue(v)
 			case "additionalProperties":
 				absolute.AdditionalProperties = NewSchemaFromObject(v)
+			case "definitions":
+				absolute.Definitions = mapOfSchemasValue(v)
 			case "properties":
 				absolute.Properties = mapOfSchemasValue(v)
 			case "patternProperties":
 				absolute.PatternProperties = mapOfSchemasValue(v)
 			case "dependencies":
 				absolute.Dependencies = mapOfSchemasOrStringArraysValue(v)
+			case "propertyNames":
+				absolute.PropertyNames = NewSchemaFromObject(v)
 
+			case "const":
+				absolute.Const = v
 			case "enum":
 				absolute.Enumeration = arrayOfEnumValuesValue(v)
-
 			case "type":
 				absolute.Type = stringOrStringArrayValue(v)
+			case "format":
+				absolute.Format = stringValue(v)
+			case "contentMediaType":
+				absolute.ContentMediaType = stringValue(v)
+			case "contentEncoding":
+				absolute.ContentEncoding = stringValue(v)
+
+			case "if":
+				absolute.If = NewSchemaFromObject(v)
+			case "then":
+				absolute.Then = NewSchemaFromObject(v)
+			case "else":
+				absolute.Else = NewSchemaFromObject(v)
 			case "allOf":
 				absolute.AllOf = arrayOfSchemasValue(v)
 			case "anyOf":
@@ -167,29 +186,6 @@ func NewAbsoluteFromObject(jsonData *yaml.Node) *Absolute {
 				absolute.OneOf = arrayOfSchemasValue(v)
 			case "not":
 				absolute.Not = NewSchemaFromObject(v)
-			case "definitions":
-				absolute.Definitions = mapOfSchemasValue(v)
-
-			case "format":
-				absolute.Format = stringValue(v)
-			case "contentMediaType":
-				absolute.ContentMediaType = stringValue(v)
-			case "contentEncoding":
-				absolute.ContentEncoding = stringValue(v)
-
-			case "contains":
-				absolute.Contains = NewSchemaFromObject(v)
-			case "propertyNames":
-				absolute.PropertyNames = NewSchemaFromObject(v)
-			case "if":
-				absolute.If = NewSchemaFromObject(v)
-			case "then":
-				absolute.Then = NewSchemaFromObject(v)
-			case "else":
-				absolute.Else = NewSchemaFromObject(v)
-
-			case "const":
-				absolute.Const = boolValue(v)
 
 			default:
 				fmt.Printf("UNSUPPORTED (%s)\n", k)
@@ -286,6 +282,68 @@ func boolValue(v *yaml.Node) *bool {
 		}
 	default:
 		fmt.Printf("boolValue: unexpected node %+v\n", v)
+	}
+	return nil
+}
+
+// Gets array of interfaces from an interface{} value if possible.
+func arrayValue(v *yaml.Node) *[]interface{} {
+	switch v.Kind {
+	case yaml.ScalarNode:
+		a := make([]interface{}, 0)
+		a = append(a, v.Value)
+		return &a
+	case yaml.SequenceNode:
+		a := make([]interface{}, 0)
+		for _, v2 := range v.Content {
+			switch v2.Kind {
+			case yaml.ScalarNode:
+				a = append(a, v2.Value)
+			default:
+				fmt.Printf("arrayValue: unexpected node %+v\n", v2)
+			}
+		}
+		return &a
+	default:
+		fmt.Printf("arrayValue: unexpected node %+v\n", v)
+	}
+	return nil
+}
+
+// Gets the map value of an interface{} value if possible.
+func mapValue(v *yaml.Node) *map[string]interface{} {
+	switch v.Kind {
+	case yaml.MappingNode:
+		m := make(map[string]interface{})
+		for i := 0; i < len(v.Content); i += 2 {
+			k2 := v.Content[i].Value
+			v2 := v.Content[i+1]
+			switch v2.Kind {
+			case yaml.ScalarNode:
+				m[k2] = v2.Value
+			default:
+				fmt.Printf("mapValue: unexpected node %+v\n", v2)
+			}
+		}
+		return &m
+	default:
+		fmt.Printf("mapValue: unexpected node %+v\n", v)
+	}
+	return nil
+}
+
+// Gets the null value of an interface{} value if possible.
+func nullValue(v *yaml.Node) *interface{} {
+	switch v.Kind {
+	case yaml.ScalarNode:
+		switch v.Tag {
+		case "!!null":
+			return nil
+		default:
+			fmt.Printf("nullValue: unexpected node %+v\n", v)
+		}
+	default:
+		fmt.Printf("nullValue: unexpected node %+v\n", v)
 	}
 	return nil
 }
