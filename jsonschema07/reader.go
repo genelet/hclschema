@@ -230,8 +230,8 @@ func stringValue(v *yaml.Node) *string {
 }
 
 // Gets the numeric value of an interface{} value if possible.
-func numberValue(v *yaml.Node) *SchemaNumber {
-	number := &SchemaNumber{}
+func numberValue(v *yaml.Node) *IntegerOrFloat {
+	number := &IntegerOrFloat{}
 	switch v.Kind {
 	case yaml.ScalarNode:
 		switch v.Tag {
@@ -315,7 +315,7 @@ func arrayValue(v *yaml.Node) *[]interface{} {
 }
 
 // Gets a map of Combineds from an interface{} value if possible.
-func mapOfCombinedsValue(v *yaml.Node) *[]*NamedCombined {
+func mapOfCombinedsValue(v *yaml.Node) []*NamedCombined {
 	switch v.Kind {
 	case yaml.MappingNode:
 		m := make([]*NamedCombined, 0)
@@ -325,7 +325,7 @@ func mapOfCombinedsValue(v *yaml.Node) *[]*NamedCombined {
 			pair := &NamedCombined{Name: k2, Value: combinedFromObject(v2)}
 			m = append(m, pair)
 		}
-		return &m
+		return m
 	default:
 		fmt.Printf("mapOfCombinedsValue: unexpected node %+v\n", v)
 	}
@@ -333,7 +333,7 @@ func mapOfCombinedsValue(v *yaml.Node) *[]*NamedCombined {
 }
 
 // Gets an array of Combineds from an interface{} value if possible.
-func arrayOfCombinedsValue(v *yaml.Node) *[]*Combined {
+func arrayOfCombinedsValue(v *yaml.Node) []*Combined {
 	switch v.Kind {
 	case yaml.SequenceNode:
 		m := make([]*Combined, 0)
@@ -346,12 +346,12 @@ func arrayOfCombinedsValue(v *yaml.Node) *[]*Combined {
 				fmt.Printf("arrayOfCombinedOrBooleansValue: unexpected node %+v\n", v2)
 			}
 		}
-		return &m
+		return m
 	case yaml.MappingNode:
 		m := make([]*Combined, 0)
 		s := combinedFromObject(v)
 		m = append(m, s)
-		return &m
+		return m
 	default:
 		fmt.Printf("arrayOfCombinedOrBooleansValue: unexpected node %+v\n", v)
 	}
@@ -383,11 +383,10 @@ func schemaOrCombinedArrayValue(v *yaml.Node) *CombinedOrCombinedArray {
 }
 
 // Gets an array of strings from an interface{} value if possible.
-func arrayOfStringsValue(v *yaml.Node) *[]string {
+func arrayOfStringsValue(v *yaml.Node) []string {
 	switch v.Kind {
 	case yaml.ScalarNode:
-		a := []string{v.Value}
-		return &a
+		return []string{v.Value}
 	case yaml.SequenceNode:
 		a := make([]string, 0)
 		for _, v2 := range v.Content {
@@ -398,7 +397,7 @@ func arrayOfStringsValue(v *yaml.Node) *[]string {
 				fmt.Printf("arrayOfStringsValue: unexpected node %+v\n", v2)
 			}
 		}
-		return &a
+		return a
 	default:
 		fmt.Printf("arrayOfStringsValue: unexpected node %+v\n", v)
 	}
@@ -432,7 +431,7 @@ func stringOrStringArrayValue(v *yaml.Node) *StringOrStringArray {
 }
 
 // Gets an array of enum values from an interface{} value if possible.
-func arrayOfEnumValuesValue(v *yaml.Node) *[]SchemaEnumValue {
+func arrayOfEnumValuesValue(v *yaml.Node) []SchemaEnumValue {
 	a := make([]SchemaEnumValue, 0)
 	switch v.Kind {
 	case yaml.SequenceNode:
@@ -455,11 +454,11 @@ func arrayOfEnumValuesValue(v *yaml.Node) *[]SchemaEnumValue {
 	default:
 		fmt.Printf("arrayOfEnumValuesValue: unexpected node %+v\n", v)
 	}
-	return &a
+	return a
 }
 
 // Gets a map of schemas or string arrays from an interface{} value if possible.
-func mapOfCombinedsOrStringArraysValue(v *yaml.Node) *[]*NamedCombinedOrStringArray {
+func mapOfCombinedsOrStringArraysValue(v *yaml.Node) []*NamedCombinedOrStringArray {
 	m := make([]*NamedCombinedOrStringArray, 0)
 	switch v.Kind {
 	case yaml.MappingNode:
@@ -488,5 +487,5 @@ func mapOfCombinedsOrStringArraysValue(v *yaml.Node) *[]*NamedCombinedOrStringAr
 	default:
 		fmt.Printf("mapOfCombinedsOrStringArraysValue: unexpected node %+v\n", v)
 	}
-	return &m
+	return m
 }

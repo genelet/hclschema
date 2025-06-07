@@ -18,64 +18,120 @@ package jsonschema07
 
 import "gopkg.in/yaml.v3"
 
+type Common struct {
+	ID               *string              `json:"$id,omitempty" hcl:"$id,omitempty"`
+	Ref              *string              `json:"$ref,omitempty" hcl:"$ref,omitempty"`
+	Schema           *string              `json:"$schema,omitempty" hcl:"$schema,omitempty"`
+	Type             *StringOrStringArray `json:"type,omitempty" hcl:"type,omitempty"`
+	Format           *string              `json:"format,omitempty" hcl:"format,omitempty"`
+	ContentMediaType *string              `json:"contentMediaType,omitempty" hcl:"contentMediaType,omitempty"`
+	ContentEncoding  *string              `json:"contentEncoding,omitempty" hcl:"contentEncoding,omitempty"`
+	Comment          *string              `json:"$comment,omitempty" hcl:"$comment,omitempty"`
+	Title            *string              `json:"title,omitempty" hcl:"title,omitempty"`
+	Description      *string              `json:"description,omitempty" hcl:"description,omitempty"`
+	Const            *yaml.Node           `json:"const,omitempty" hcl:"const,omitempty"`
+	Enumeration      []SchemaEnumValue    `json:"enum,omitempty" hcl:"enum,omitempty"`
+	Default          *yaml.Node           `json:"default,omitempty" hcl:"default,omitempty"`
+}
+
+type SchemaNumber struct {
+	MultipleOf       *IntegerOrFloat `json:"multipleOf,omitempty" hcl:"multipleOf,omitempty"`
+	Maximum          *IntegerOrFloat `json:"maximum,omitempty" hcl:"maximum,omitempty"`
+	ExclusiveMaximum *IntegerOrFloat `json:"exclusiveMaximum,omitempty" hcl:"exclusiveMaximum,omitempty"`
+	Minimum          *IntegerOrFloat `json:"minimum,omitempty" hcl:"minimum,omitempty"`
+	ExclusiveMinimum *IntegerOrFloat `json:"exclusiveMinimum,omitempty" hcl:"exclusiveMinimum,omitempty"`
+}
+
+type SchemaString struct {
+	MaxLength *int64  `json:"maxLength,omitempty" hcl:"maxLength,omitempty"`
+	MinLength *int64  `json:"minLength,omitempty" hcl:"minLength,omitempty"`
+	Pattern   *string `json:"pattern,omitempty" hcl:"pattern,omitempty"`
+}
+
+type SchemaArray struct {
+	AdditionalItems *Combined                `json:"additionalItems,omitempty" hcl:"additionalItems,block"`
+	Items           *CombinedOrCombinedArray `json:"items,omitempty" hcl:"items,block"`
+	MaxItems        *int64                   `json:"maxItems,omitempty" hcl:"maxItems,omitempty"`
+	MinItems        *int64                   `json:"minItems,omitempty" hcl:"minItems,omitempty"`
+	UniqueItems     *bool                    `json:"uniqueItems,omitempty" hcl:"uniqueItems,omitempty"`
+	Contains        *Combined                `json:"contains,omitempty" hcl:"contains,block"`
+}
+
+type SchemaObject struct {
+	MaxProperties        *int64                        `json:"maxProperties,omitempty" hcl:"maxProperties,omitempty"`
+	MinProperties        *int64                        `json:"minProperties,omitempty" hcl:"minProperties,omitempty"`
+	Required             []string                      `json:"required,omitempty" hcl:"required,omitempty"`
+	AdditionalProperties *Combined                     `json:"additionalProperties,omitempty" hcl:"additionalProperties,block"`
+	PropertyNames        *Combined                     `json:"propertyNames,omitempty" hcl:"propertyNames,block"`
+	Properties           []*NamedCombined              `json:"properties,omitempty" hcl:"properties,block"`
+	PatternProperties    []*NamedCombined              `json:"patternProperties,omitempty" hcl:"patternProperties,block"`
+	Dependencies         []*NamedCombinedOrStringArray `json:"dependencies,omitempty" hcl:"dependencies,block"`
+}
+
 // The Schema struct models a JSON Combined and, because schemas are
 // defined hierarchically, contains many references to itself.
 // All fields are pointers and are nil if the associated values
 // are not specified.
 type Schema struct {
-	ID          *string `json:"$id,omitempty"`
-	Schema      *string `json:"$schema,omitempty"`
-	Ref         *string `json:"$ref,omitempty"`
-	Comment     *string `json:"$comment,omitempty"`
-	Title       *string `json:"title,omitempty"`
-	Description *string `json:"description,omitempty"`
+	Common
+	Ref       *string     `json:"$ref,omitempty" hcl:"$ref,omitempty"`
+	ReadOnly  *bool       `json:"readOnly,omitempty" hcl:"readOnly,omitempty"`
+	WriteOnly *bool       `json:"writeOnly,omitempty" hcl:"writeOnly,omitempty"`
+	Examples  []*Combined `json:"examples,omitempty" hcl:"examples,block"`
 
-	Default   *yaml.Node   `json:"default,omitempty"`
-	ReadOnly  *bool        `json:"readOnly,omitempty"`
-	WriteOnly *bool        `json:"writeOnly,omitempty"`
-	Examples  *[]*Combined `json:"examples,omitempty"`
+	SchemaNumber
+	SchemaString
+	SchemaArray
+	SchemaObject
 
-	MultipleOf       *SchemaNumber `json:"multipleOf,omitempty"`
-	Maximum          *SchemaNumber `json:"maximum,omitempty"`
-	ExclusiveMaximum *SchemaNumber `json:"exclusiveMaximum,omitempty"`
-	Minimum          *SchemaNumber `json:"minimum,omitempty"`
-	ExclusiveMinimum *SchemaNumber `json:"exclusiveMinimum,omitempty"`
+	Definitions []*NamedCombined `json:"definitions,omitempty" hcl:"definitions,block"`
 
-	MaxLength *int64  `json:"maxLength,omitempty"`
-	MinLength *int64  `json:"minLength,omitempty"`
-	Pattern   *string `json:"pattern,omitempty"`
+	If    *Combined   `json:"if,omitempty" hcl:"if,block"`
+	Then  *Combined   `json:"then,omitempty" hcl:"then,block"`
+	Else  *Combined   `json:"else,omitempty" hcl:"else,block"`
+	AllOf []*Combined `json:"allOf,omitempty" hcl:"allOf,block"`
+	AnyOf []*Combined `json:"anyOf,omitempty" hcl:"anyOf,block"`
+	OneOf []*Combined `json:"oneOf,omitempty" hcl:"oneOf,block"`
+	Not   *Combined   `json:"not,omitempty" hcl:"not,block"`
+}
 
-	AdditionalItems *Combined                `json:"additionalItems,omitempty"`
-	Items           *CombinedOrCombinedArray `json:"items,omitempty"`
-	MaxItems        *int64                   `json:"maxItems,omitempty"`
-	MinItems        *int64                   `json:"minItems,omitempty"`
-	UniqueItems     *bool                    `json:"uniqueItems,omitempty"`
+// IsIntegerOrFloat returns true if the Schema is a number
+func (s *Schema) IsIntegerOrFloat() bool {
+	return s.MultipleOf != nil || s.Maximum != nil || s.ExclusiveMaximum != nil || s.Minimum != nil || s.ExclusiveMinimum != nil
+}
 
-	Contains             *Combined                      `json:"contains,omitempty"`
-	MaxProperties        *int64                         `json:"maxProperties,omitempty"`
-	MinProperties        *int64                         `json:"minProperties,omitempty"`
-	Required             *[]string                      `json:"required,omitempty"`
-	AdditionalProperties *Combined                      `json:"additionalProperties,omitempty"`
-	Definitions          *[]*NamedCombined              `json:"definitions,omitempty"`
-	Properties           *[]*NamedCombined              `json:"properties,omitempty"`
-	PatternProperties    *[]*NamedCombined              `json:"patternProperties,omitempty"`
-	Dependencies         *[]*NamedCombinedOrStringArray `json:"dependencies,omitempty"`
-	PropertyNames        *Combined                      `json:"propertyNames,omitempty"`
+// IsString returns true if the Schema is a string
+func (s *Schema) IsString() bool {
+	return s.MaxLength != nil || s.MinLength != nil || s.Pattern != nil
+}
 
-	Const            *yaml.Node `json:"const,omitempty"`
-	Enumeration      *[]SchemaEnumValue
-	Type             *StringOrStringArray `json:"type,omitempty"`
-	Format           *string              `json:"format,omitempty"`
-	ContentMediaType *string              `json:"contentMediaType,omitempty"`
-	ContentEncoding  *string              `json:"contentEncoding,omitempty"`
+// IsArray returns true if the Schema is an array
+func (s *Schema) IsArray() bool {
+	return s.AdditionalItems != nil || s.Items != nil || s.MaxItems != nil || s.MinItems != nil || s.UniqueItems != nil || s.Contains != nil
+}
 
-	If    *Combined    `json:"if,omitempty"`
-	Then  *Combined    `json:"then,omitempty"`
-	Else  *Combined    `json:"else,omitempty"`
-	AllOf *[]*Combined `json:"allOf,omitempty"`
-	AnyOf *[]*Combined `json:"anyOf,omitempty"`
-	OneOf *[]*Combined `json:"oneOf,omitempty"`
-	Not   *Combined    `json:"not,omitempty"`
+// IsObject returns true if the Schema is an object
+func (s *Schema) IsObject() bool {
+	return s.MaxProperties != nil || s.MinProperties != nil || s.Required != nil || s.AdditionalProperties != nil || s.PropertyNames != nil ||
+		s.Properties != nil || s.PatternProperties != nil || s.Dependencies != nil
+}
+
+// IsReference returns true if the Schema is a reference
+func (s *Schema) IsReference() bool {
+	return s.Ref != nil
+}
+
+// IsOnlyReference returns true if the Schema is a reference
+// and does not have any other properties set.
+func (s *Schema) IsOnlyReference() bool {
+	return s.Ref != nil &&
+		s.MultipleOf == nil && s.Maximum == nil && s.ExclusiveMaximum == nil && s.Minimum == nil && s.ExclusiveMinimum == nil &&
+		s.MaxLength == nil && s.MinLength == nil && s.Pattern == nil &&
+		s.AdditionalItems == nil && s.Items == nil && s.MaxItems == nil && s.MinItems == nil && s.UniqueItems == nil && s.Contains == nil &&
+		s.MaxProperties == nil && s.MinProperties == nil && s.Required == nil && s.AdditionalProperties == nil && s.PropertyNames == nil &&
+		s.Properties == nil && s.PatternProperties == nil && s.Dependencies == nil &&
+		s.Default == nil && s.ReadOnly == nil && s.WriteOnly == nil &&
+		s.Definitions == nil
 }
 
 // Combined represents a value that can be either a Schema or a Boolean.
@@ -102,22 +158,22 @@ func NewCombinedWithBoolean(b bool) *Combined {
 // have values of one type or another. All are used to represent parts
 // of Combineds.
 
-// SchemaNumber represents a value that can be either an Integer or a Float.
-type SchemaNumber struct {
+// IntegerOrFloat represents a value that can be either an Integer or a Float.
+type IntegerOrFloat struct {
 	Integer *int64
 	Float   *float64
 }
 
-// NewSchemaNumberWithInteger creates and returns a new object
-func NewSchemaNumberWithInteger(i int64) *SchemaNumber {
-	result := &SchemaNumber{}
+// NewIntegerOrFloatWithInteger creates and returns a new object
+func NewIntegerOrFloatWithInteger(i int64) *IntegerOrFloat {
+	result := &IntegerOrFloat{}
 	result.Integer = &i
 	return result
 }
 
-// NewSchemaNumberWithFloat creates and returns a new object
-func NewSchemaNumberWithFloat(f float64) *SchemaNumber {
-	result := &SchemaNumber{}
+// NewIntegerOrFloatWithFloat creates and returns a new object
+func NewIntegerOrFloatWithFloat(f float64) *IntegerOrFloat {
+	result := &IntegerOrFloat{}
 	result.Float = &f
 	return result
 }
@@ -150,6 +206,17 @@ type CombinedOrStringArray struct {
 	StringArray *[]string
 }
 
+func NewCombinedOrStringArrayWithCombined(s *Combined) *CombinedOrStringArray {
+	result := &CombinedOrStringArray{}
+	result.Combined = s
+	return result
+}
+func NewCombinedOrStringArrayWithStringArray(a []string) *CombinedOrStringArray {
+	result := &CombinedOrStringArray{}
+	result.StringArray = &a
+	return result
+}
+
 // CombinedOrCombinedArray represents a value that can be either
 // a Combined or an Array of Combineds.
 type CombinedOrCombinedArray struct {
@@ -176,6 +243,12 @@ func NewCombinedOrCombinedArrayWithCombinedArray(a []*Combined) *CombinedOrCombi
 type SchemaEnumValue struct {
 	String *string
 	Bool   *bool
+	Number *IntegerOrFloat
+	Null   *SchemaNull
+}
+
+type SchemaNull struct {
+	IsNull *bool `json:"isNull,omitempty" hcl:"isNull,omitempty"`
 }
 
 // NamedCombined is a name-value pair that is used to emulate maps
@@ -199,11 +272,11 @@ type NamedCombinedOrStringArray struct {
 
 // Access named subschemas by name
 
-func namedCombinedArrayElementWithName(array *[]*NamedCombined, name string) *Combined {
+func namedCombinedArrayElementWithName(array []*NamedCombined, name string) *Combined {
 	if array == nil {
 		return nil
 	}
-	for _, pair := range *array {
+	for _, pair := range array {
 		if pair.Name == name {
 			return pair.Value
 		}
@@ -228,5 +301,5 @@ func (s *Schema) DefinitionWithName(name string) *Combined {
 
 // AddProperty adds a named property.
 func (s *Schema) AddProperty(name string, property *Combined) {
-	*s.Properties = append(*s.Properties, NewNamedCombined(name, property))
+	s.Properties = append(s.Properties, NewNamedCombined(name, property))
 }
