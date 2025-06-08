@@ -1,6 +1,10 @@
-package marshal07
+package jsm07
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"github.com/genelet/determined/dethcl"
+)
 
 // CombinedOrStringArray represents a value that can be either
 // a Combined or an Array of Strings.
@@ -36,6 +40,34 @@ func (s *CombinedOrStringArray) MarshalJSON() ([]byte, error) {
 	}
 	if s.StringArray != nil {
 		return json.Marshal(*s.StringArray)
+	}
+	return nil, nil // Return nil if both are nil
+}
+
+func (s *CombinedOrStringArray) UnmarshalHCL(data []byte) error {
+	if len(data) == 0 {
+		return nil // Handle empty data gracefully
+	}
+	var combined Combined
+	if err := dethcl.Unmarshal(data, &combined); err == nil {
+		s.Combined = &combined
+		return nil
+	}
+	var arr []string
+	if err := dethcl.Unmarshal(data, &arr); err == nil {
+		s.StringArray = &arr
+		return nil
+	}
+
+	return dethcl.Unmarshal(data, &s.Combined) // Fallback to Combined if both fail
+}
+
+func (s *CombinedOrStringArray) MarshalHCL() ([]byte, error) {
+	if s.Combined != nil {
+		return dethcl.Marshal(s.Combined)
+	}
+	if s.StringArray != nil {
+		return dethcl.Marshal(*s.StringArray)
 	}
 	return nil, nil // Return nil if both are nil
 }

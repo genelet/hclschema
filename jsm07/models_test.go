@@ -1,10 +1,11 @@
-package marshal07
+package jsm07
 
 import (
 	"encoding/json"
 	"os"
 	"testing"
 
+	"github.com/genelet/determined/dethcl"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -52,9 +53,9 @@ func TestCombinedOrCombinedArrayUnmarshalJSON(t *testing.T) {
 	}
 }
 
-// TestMCP tests the Marshal and Unmarshal functionality of the mcp schema in the samples directory.
-func TestMCP(t *testing.T) {
-	bs, err := os.ReadFile("samples/mcp.json")
+// TestMCPJSON tests the Marshal and Unmarshal functionality of the mcp schema in the samples directory.
+func TestMCPJSON(t *testing.T) {
+	bs, err := os.ReadFile("samples/x.json")
 	if err != nil {
 		t.Fatalf("Failed to read mcp.json: %v", err)
 	}
@@ -67,17 +68,48 @@ func TestMCP(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to marshal mcp: %v", err)
 	}
-	//t.Errorf("%s", string(bs1))
 
 	mcp1 := new(Schema)
 	if err := json.Unmarshal(bs1, mcp1); err != nil {
 		t.Fatalf("Failed to unmarshal marshalled mcp: %v", err)
 	}
 
-	for k, v := range mcp1.Definitions {
-		if diff := cmp.Diff(mcp.Definitions[k], v); diff != "" {
-			t.Errorf("\n\n\n%s", k)
-			t.Errorf("MCP schema mismatch (-want +got):\n%s", diff)
-		}
+	if diff := cmp.Diff(mcp, mcp1); diff != "" {
+		t.Errorf("MCP schema mismatch (-want +got):\n%s", diff)
+	}
+}
+
+// TestMCPHCL tests the Marshal and Unmarshal functionality of the mcp schema in the samples directory.
+func TestMCPHCL(t *testing.T) {
+	bs, err := os.ReadFile("samples/x.json")
+	if err != nil {
+		t.Fatalf("Failed to read mcp.json: %v", err)
+	}
+	mcp := new(Schema)
+	if err := json.Unmarshal(bs, mcp); err != nil {
+		t.Fatalf("Failed to unmarshal mcp.json: %v", err)
+	}
+
+	bs1, err := dethcl.Marshal(mcp)
+	if err != nil {
+		t.Fatalf("Failed to marshal mcp: %v", err)
+	}
+	t.Errorf("HCL:\n%s", bs1)
+
+	mcp1 := new(Schema)
+	if err := dethcl.Unmarshal(bs1, mcp1); err != nil {
+		t.Fatalf("Failed to unmarshal mcp: %v", err)
+	}
+
+	bs2, err := dethcl.Marshal(mcp1)
+	if err != nil {
+		t.Fatalf("Failed to marshal mcp1: %v", err)
+	}
+	t.Errorf("HCL:\n%s", bs2)
+
+	x1 := mcp
+	x2 := mcp1
+	if diff := cmp.Diff(x1, x2); diff != "" {
+		t.Errorf("MCP schema mismatch (-want +got):\n%s", diff)
 	}
 }

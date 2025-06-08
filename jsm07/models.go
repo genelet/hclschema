@@ -1,49 +1,50 @@
-package marshal07
+package jsm07
 
-import "encoding/json"
+import (
+	"encoding/json"
+)
 
 type Common struct {
-	ID               *string           `json:"$id,omitempty" hcl:"$id,omitempty"`
-	Ref              *string           `json:"$ref,omitempty" hcl:"$ref,omitempty"`
-	Schema           *string           `json:"$schema,omitempty" hcl:"$schema,omitempty"`
-	Format           *string           `json:"format,omitempty" hcl:"format,omitempty"`
-	ContentMediaType *string           `json:"contentMediaType,omitempty" hcl:"contentMediaType,omitempty"`
-	ContentEncoding  *string           `json:"contentEncoding,omitempty" hcl:"contentEncoding,omitempty"`
-	Comment          *string           `json:"$comment,omitempty" hcl:"$comment,omitempty"`
-	Title            *string           `json:"title,omitempty" hcl:"title,omitempty"`
-	Description      *string           `json:"description,omitempty" hcl:"description,omitempty"`
-	Const            *json.RawMessage  `json:"const,omitempty" hcl:"const,omitempty"`
-	Enumeration      []SchemaEnumValue `json:"enum,omitempty" hcl:"enum,omitempty"`
-	Default          *json.RawMessage  `json:"default,omitempty" hcl:"default,omitempty"`
+	ID               *string           `json:"$id,omitempty" hcl:"_id,optional"`
+	Schema           *string           `json:"$schema,omitempty" hcl:"_schema,optional"`
+	Format           *string           `json:"format,omitempty" hcl:"format,optional"`
+	ContentMediaType *string           `json:"contentMediaType,omitempty" hcl:"contentMediaType,optional"`
+	ContentEncoding  *string           `json:"contentEncoding,omitempty" hcl:"contentEncoding,optional"`
+	Comment          *string           `json:"$comment,omitempty" hcl:"_comment,optional"`
+	Title            *string           `json:"title,omitempty" hcl:"title,optional"`
+	Description      *string           `json:"description,omitempty" hcl:"description,optional"`
+	Const            *json.RawMessage  `json:"const,omitempty" hcl:"const,optional"`
+	Enumeration      []SchemaEnumValue `json:"enum,omitempty" hcl:"enum,optional"`
+	Default          *json.RawMessage  `json:"default,omitempty" hcl:"default,optional"`
 }
 
 type SchemaNumber struct {
-	MultipleOf       *IntegerOrFloat `json:"multipleOf,omitempty" hcl:"multipleOf,omitempty"`
-	Maximum          *IntegerOrFloat `json:"maximum,omitempty" hcl:"maximum,omitempty"`
-	ExclusiveMaximum *IntegerOrFloat `json:"exclusiveMaximum,omitempty" hcl:"exclusiveMaximum,omitempty"`
-	Minimum          *IntegerOrFloat `json:"minimum,omitempty" hcl:"minimum,omitempty"`
-	ExclusiveMinimum *IntegerOrFloat `json:"exclusiveMinimum,omitempty" hcl:"exclusiveMinimum,omitempty"`
+	MultipleOf       *IntegerOrFloat `json:"multipleOf,omitempty" hcl:"multipleOf,optional"`
+	Maximum          *IntegerOrFloat `json:"maximum,omitempty" hcl:"maximum,optional"`
+	ExclusiveMaximum *IntegerOrFloat `json:"exclusiveMaximum,omitempty" hcl:"exclusiveMaximum,optional"`
+	Minimum          *IntegerOrFloat `json:"minimum,omitempty" hcl:"minimum,optional"`
+	ExclusiveMinimum *IntegerOrFloat `json:"exclusiveMinimum,omitempty" hcl:"exclusiveMinimum,optional"`
 }
 
 type SchemaString struct {
-	MaxLength *int64  `json:"maxLength,omitempty" hcl:"maxLength,omitempty"`
-	MinLength *int64  `json:"minLength,omitempty" hcl:"minLength,omitempty"`
-	Pattern   *string `json:"pattern,omitempty" hcl:"pattern,omitempty"`
+	MaxLength *int64  `json:"maxLength,omitempty" hcl:"maxLength,optional"`
+	MinLength *int64  `json:"minLength,omitempty" hcl:"minLength,optional"`
+	Pattern   *string `json:"pattern,omitempty" hcl:"pattern,optional"`
 }
 
 type SchemaArray struct {
 	AdditionalItems *Combined                `json:"additionalItems,omitempty" hcl:"additionalItems,block"`
 	Items           *CombinedOrCombinedArray `json:"items,omitempty" hcl:"items,block"`
-	MaxItems        *int64                   `json:"maxItems,omitempty" hcl:"maxItems,omitempty"`
-	MinItems        *int64                   `json:"minItems,omitempty" hcl:"minItems,omitempty"`
-	UniqueItems     *bool                    `json:"uniqueItems,omitempty" hcl:"uniqueItems,omitempty"`
+	MaxItems        *int64                   `json:"maxItems,omitempty" hcl:"maxItems,optional"`
+	MinItems        *int64                   `json:"minItems,omitempty" hcl:"minItems,optional"`
+	UniqueItems     *bool                    `json:"uniqueItems,omitempty" hcl:"uniqueItems,optional"`
 	Contains        *Combined                `json:"contains,omitempty" hcl:"contains,block"`
 }
 
 type SchemaObject struct {
-	MaxProperties        *int64                            `json:"maxProperties,omitempty" hcl:"maxProperties,omitempty"`
-	MinProperties        *int64                            `json:"minProperties,omitempty" hcl:"minProperties,omitempty"`
-	Required             []string                          `json:"required,omitempty" hcl:"required,omitempty"`
+	MaxProperties        *int64                            `json:"maxProperties,omitempty" hcl:"maxProperties,optional"`
+	MinProperties        *int64                            `json:"minProperties,omitempty" hcl:"minProperties,optional"`
+	Required             []string                          `json:"required,omitempty" hcl:"required,optional"`
 	AdditionalProperties *Combined                         `json:"additionalProperties,omitempty" hcl:"additionalProperties,block"`
 	PropertyNames        *Combined                         `json:"propertyNames,omitempty" hcl:"propertyNames,block"`
 	Properties           map[string]*Combined              `json:"properties,omitempty" hcl:"properties,block"`
@@ -56,12 +57,12 @@ type SchemaObject struct {
 // All fields are pointers and are nil if the associated values
 // are not specified.
 type Schema struct {
-	Type *StringOrStringArray `json:"type,omitempty" hcl:"type,omitempty"`
+	Type *StringOrStringArray `json:"type,omitempty" hcl:"type,optional"`
 	Common
-	Ref       *string           `json:"$ref,omitempty" hcl:"$ref,omitempty"`
-	ReadOnly  *bool             `json:"readOnly,omitempty" hcl:"readOnly,omitempty"`
-	WriteOnly *bool             `json:"writeOnly,omitempty" hcl:"writeOnly,omitempty"`
-	Examples  []json.RawMessage `json:"examples,omitempty" hcl:"examples,block"`
+	Ref       *string          `json:"$ref,omitempty" hcl:"_ref,optional"`
+	ReadOnly  *bool            `json:"readOnly,omitempty" hcl:"readOnly,optional"`
+	WriteOnly *bool            `json:"writeOnly,omitempty" hcl:"writeOnly,optional"`
+	Examples  *json.RawMessage `json:"examples,omitempty" hcl:"examples,optional"`
 
 	SchemaNumber
 	SchemaString

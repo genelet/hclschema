@@ -1,0 +1,71 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "CreateMessageRequest": {
+            "description": "A request from the server to sample an LLM via the client. The client has full discretion over which model to select. The client should also inform the user before beginning sampling, to allow them to inspect the request (human in the loop) and decide whether to approve it.",
+            "properties": {
+                "method": {
+                    "const": "sampling/createMessage",
+                    "type": "string"
+                },
+                "params": {
+                    "properties": {
+                        "includeContext": {
+                            "description": "A request to include context from one or more MCP servers (including the caller), to be attached to the prompt. The client MAY ignore this request.",
+                            "enum": [
+                                "allServers",
+                                "none",
+                                "thisServer"
+                            ],
+                            "type": "string"
+                        },
+                        "maxTokens": {
+                            "description": "The maximum number of tokens to sample, as requested by the server. The client MAY choose to sample fewer tokens than requested.",
+                            "type": "integer"
+                        },
+                        "messages": {
+                            "items": {
+                                "$ref": "#/definitions/SamplingMessage"
+                            },
+                            "type": "array"
+                        },
+                        "metadata": {
+                            "additionalProperties": true,
+                            "description": "Optional metadata to pass through to the LLM provider. The format of this metadata is provider-specific.",
+                            "properties": {},
+                            "type": "object"
+                        },
+                        "modelPreferences": {
+                            "$ref": "#/definitions/ModelPreferences",
+                            "description": "The server's preferences for which model to select. The client MAY ignore these preferences."
+                        },
+                        "stopSequences": {
+                            "items": {
+                                "type": "string"
+                            },
+                            "type": "array"
+                        },
+                        "systemPrompt": {
+                            "description": "An optional system prompt the server wants to use for sampling. The client MAY modify or omit this prompt.",
+                            "type": "string"
+                        },
+                        "temperature": {
+                            "type": "number"
+                        }
+                    },
+                    "required": [
+                        "maxTokens",
+                        "messages"
+                    ],
+                    "type": "object"
+                }
+            },
+            "required": [
+                "method",
+                "params"
+            ],
+            "type": "object"
+        }
+    }
+}
+

@@ -1,6 +1,10 @@
-package marshal07
+package jsm07
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"github.com/genelet/determined/dethcl"
+)
 
 // StringOrStringArray represents a value that can be either
 // a String or an Array of Strings.
@@ -32,6 +36,30 @@ func (s *StringOrStringArray) MarshalJSON() ([]byte, error) {
 	}
 	if s.StringArray != nil {
 		return json.Marshal(*s.StringArray)
+	}
+	return nil, nil // Return nil if both are nil
+}
+
+func (s *StringOrStringArray) UnmarshalHCL(data []byte) error {
+	var str string
+	if err := dethcl.Unmarshal(data, &str); err == nil {
+		s.String = &str
+		return nil
+	}
+	var arr []string
+	if err := dethcl.Unmarshal(data, &arr); err == nil {
+		s.StringArray = &arr
+		return nil
+	}
+	return dethcl.Unmarshal(data, &s.String) // Fallback to String if both fail
+}
+
+func (s *StringOrStringArray) MarshalHCL() ([]byte, error) {
+	if s.String != nil {
+		return dethcl.Marshal(*s.String)
+	}
+	if s.StringArray != nil {
+		return dethcl.Marshal(*s.StringArray)
 	}
 	return nil, nil // Return nil if both are nil
 }

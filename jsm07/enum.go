@@ -1,6 +1,10 @@
-package marshal07
+package jsm07
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"github.com/genelet/determined/dethcl"
+)
 
 // SchemaEnumValue represents a value that can be part of an
 // enumeration in a Combined.
@@ -52,6 +56,52 @@ func (s *SchemaEnumValue) MarshalJSON() ([]byte, error) {
 	}
 	if s.Number != nil {
 		return json.Marshal(s.Number)
+	}
+
+	return nil, nil // Return nil if all are nil
+}
+
+func (s *SchemaEnumValue) UnmarshalHCL(data []byte) error {
+	if string(data) == "null" {
+		s.Null = new(bool)
+		*s.Null = true
+		return nil
+	}
+
+	var str string
+	if err := dethcl.Unmarshal(data, &str); err == nil {
+		s.String = &str
+		return nil
+	}
+
+	var boolean bool
+	if err := dethcl.Unmarshal(data, &boolean); err == nil {
+		s.Bool = &boolean
+		return nil
+	}
+
+	var number IntegerOrFloat
+	if err := dethcl.Unmarshal(data, &number); err == nil {
+		s.Number = &number
+		return nil
+	}
+
+	return dethcl.Unmarshal(data, &s.String) // Fallback to String if all fail
+}
+
+func (s *SchemaEnumValue) MarshalHCL() ([]byte, error) {
+	if s.Null != nil && *s.Null {
+		return []byte("null"), nil
+	}
+
+	if s.String != nil {
+		return dethcl.Marshal(*s.String)
+	}
+	if s.Bool != nil {
+		return dethcl.Marshal(*s.Bool)
+	}
+	if s.Number != nil {
+		return dethcl.Marshal(s.Number)
 	}
 
 	return nil, nil // Return nil if all are nil
