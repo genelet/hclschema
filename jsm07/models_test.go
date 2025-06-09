@@ -7,6 +7,7 @@ import (
 
 	"github.com/genelet/determined/dethcl"
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
 func TestCombinedOrCombinedArrayUnmarshalJSON(t *testing.T) {
@@ -55,7 +56,7 @@ func TestCombinedOrCombinedArrayUnmarshalJSON(t *testing.T) {
 
 // TestMCPJSON tests the Marshal and Unmarshal functionality of the mcp schema in the samples directory.
 func TestMCPJSON(t *testing.T) {
-	bs, err := os.ReadFile("samples/x.json")
+	bs, err := os.ReadFile("samples/mcp.json")
 	if err != nil {
 		t.Fatalf("Failed to read mcp.json: %v", err)
 	}
@@ -81,7 +82,7 @@ func TestMCPJSON(t *testing.T) {
 
 // TestMCPHCL tests the Marshal and Unmarshal functionality of the mcp schema in the samples directory.
 func TestMCPHCL(t *testing.T) {
-	bs, err := os.ReadFile("samples/x.json")
+	bs, err := os.ReadFile("samples/mcp.json")
 	if err != nil {
 		t.Fatalf("Failed to read mcp.json: %v", err)
 	}
@@ -94,22 +95,27 @@ func TestMCPHCL(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to marshal mcp: %v", err)
 	}
-	t.Errorf("HCL:\n%s", bs1)
 
 	mcp1 := new(Schema)
 	if err := dethcl.Unmarshal(bs1, mcp1); err != nil {
 		t.Fatalf("Failed to unmarshal mcp: %v", err)
 	}
 
-	bs2, err := dethcl.Marshal(mcp1)
-	if err != nil {
-		t.Fatalf("Failed to marshal mcp1: %v", err)
+	if diff := cmp.Diff(mcp, mcp1, cmpopts.IgnoreFields(Schema{}, "Description")); diff != "" {
+		t.Errorf("MCP schema mismatch (-want +got):\n%s", diff)
 	}
-	t.Errorf("HCL:\n%s", bs2)
 
-	x1 := mcp
-	x2 := mcp1
-	if diff := cmp.Diff(x1, x2); diff != "" {
+	bs2, err := dethcl.Marshal(mcp)
+	if err != nil {
+		t.Fatalf("Failed to marshal mcp: %v", err)
+	}
+
+	mcp2 := new(Schema)
+	if err := dethcl.Unmarshal(bs2, mcp2); err != nil {
+		t.Fatalf("Failed to unmarshal mcp: %v", err)
+	}
+
+	if diff := cmp.Diff(mcp, mcp2, cmpopts.IgnoreFields(Schema{}, "Description")); diff != "" {
 		t.Errorf("MCP schema mismatch (-want +got):\n%s", diff)
 	}
 }

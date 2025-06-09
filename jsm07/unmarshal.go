@@ -9,7 +9,7 @@ import (
 
 // UnmarshalHCL unmarshals HCL data into a Schema object.
 func (self *Schema) UnmarshalHCL(data []byte, labels ...string) error {
-	s, err := parseSchemaFromData(data, labels...)
+	s, err := ParseSchema(data)
 	if err != nil {
 		return err
 	}
@@ -18,15 +18,15 @@ func (self *Schema) UnmarshalHCL(data []byte, labels ...string) error {
 }
 
 // parseSchema parses a HCL string representing a JSON schema and returns a Schema object.
-func parseSchemaFromData(data []byte, labels ...string) (*Schema, error) {
+func ParseSchema(data []byte) (*Schema, error) {
 	body, err := light.ParseBody(data)
 	if err != nil {
 		return nil, err
 	}
-	return parseSchemaFromBody(body, labels...)
+	return parseSchemaFromBody(body)
 }
 
-func parseSchemaFromBody(body *light.Body, lables ...string) (*Schema, error) {
+func parseSchemaFromBody(body *light.Body) (*Schema, error) {
 	if body == nil {
 		return nil, nil
 	}
@@ -124,9 +124,6 @@ func parseSchemaFromBody(body *light.Body, lables ...string) (*Schema, error) {
 		case "enum":
 			schema.Enumeration, err = tupleConsExprToEnum(expr)
 
-		//case "items":
-		//	schema.Items, err = exprToCombinedOrCombinedArray(expr)
-
 		default:
 			// ignore
 		}
@@ -137,6 +134,8 @@ func parseSchemaFromBody(body *light.Body, lables ...string) (*Schema, error) {
 	}
 
 	var combs []*Combined
+	props := make(map[string]*Combined)
+	var nullProps int
 
 	for _, block := range body.Blocks {
 		switch block.Type {
@@ -201,16 +200,17 @@ func parseSchemaFromBody(body *light.Body, lables ...string) (*Schema, error) {
 					schema.Definitions = make(map[string]*Combined)
 				}
 				schema.Definitions[block.Labels[0]] = combined
-			case "properties":
-				if schema.Properties == nil {
-					schema.Properties = make(map[string]*Combined)
-				}
-				schema.Properties[block.Labels[0]] = combined
 			case "patternProperties":
 				if schema.PatternProperties == nil {
 					schema.PatternProperties = make(map[string]*Combined)
 				}
 				schema.PatternProperties[block.Labels[0]] = combined
+			case "properties":
+				if len(block.Labels) == 0 {
+					nullProps++
+				} else {
+					props[block.Labels[0]] = combined
+				}
 			}
 
 		default:
@@ -222,6 +222,12 @@ func parseSchemaFromBody(body *light.Body, lables ...string) (*Schema, error) {
 		schema.Items = NewCombinedOrCombinedArrayWithCombinedArray(combs)
 	} else if len(combs) == 1 {
 		schema.Items = NewCombinedOrCombinedArrayWithCombined(combs[0])
+	}
+
+	if len(props) > 0 {
+		schema.Properties = props
+	} else if nullProps > 0 {
+		schema.Properties = map[string]*Combined{}
 	}
 
 	return schema, nil
@@ -286,43 +292,6 @@ func exprToStringOrStringArray(expr *light.Expression) *StringOrStringArray {
 	x := light.TupleConsExprToStringArray(expr)
 	return &StringOrStringArray{
 		StringArray: &x,
-	}
-}
-
-func tupleConsExprToSlice(t *light.TupleConsExpr) ([]*Combined, error) {
-	if t == nil {
-		return nil, nil
-	}
-	exprs := t.Exprs
-	if len(exprs) == 0 {
-		return nil, nil
-	}
-
-	var items []*Combined
-	for _, expr := range exprs {
-		s, err := expressionToCombined(expr)
-		if err != nil {
-			return nil, err
-		}
-		items = append(items, s)
-	}
-
-	return items, nil
-}
-
-func exprToCombinedOrCombinedArray(expr *light.Expression) (*CombinedOrCombinedArray, error) {
-	if expr.GetTcexpr() != nil {
-		items, err := tupleConsExprToSlice(expr.GetTcexpr())
-		if err != nil {
-			return nil, err
-		}
-		return NewCombinedOrCombinedArrayWithCombinedArray(items), nil
-	} else {
-		s, err := expressionToCombined(expr)
-		if err != nil {
-			return nil, err
-		}
-		return NewCombinedOrCombinedArrayWithCombined(s), nil
 	}
 }
 
@@ -417,4 +386,14 @@ func expressionToCombined(expr *light.Expression) (*Combined, error) {
 		schemaOrBoolean.Schema = schema
 	}
 	return schemaOrBoolean, nil
+}
+
+func expressionToReference(expr *light.Expression) (string, error) {
+	// in case there is only one level of reference which is parsed as lvexpr
+	if x := expr.GetLvexpr(); x != nil {
+		return "#/" + x.Val.GetStringValue(), nil
+	} else if x := light.TraversalToString(expr); x != nil {
+		return "#/" + *x, nil
+	}
+	return "", fmt.Errorf("1 invalid expression: %#v", expr)
 }

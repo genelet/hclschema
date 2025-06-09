@@ -13,9 +13,10 @@ type Common struct {
 	Comment          *string           `json:"$comment,omitempty" hcl:"_comment,optional"`
 	Title            *string           `json:"title,omitempty" hcl:"title,optional"`
 	Description      *string           `json:"description,omitempty" hcl:"description,optional"`
-	Const            *json.RawMessage  `json:"const,omitempty" hcl:"const,optional"`
 	Enumeration      []SchemaEnumValue `json:"enum,omitempty" hcl:"enum,optional"`
+	Const            *json.RawMessage  `json:"const,omitempty" hcl:"const,optional"`
 	Default          *json.RawMessage  `json:"default,omitempty" hcl:"default,optional"`
+	Examples         *json.RawMessage  `json:"examples,omitempty" hcl:"examples,optional"`
 }
 
 type SchemaNumber struct {
@@ -47,7 +48,7 @@ type SchemaObject struct {
 	Required             []string                          `json:"required,omitempty" hcl:"required,optional"`
 	AdditionalProperties *Combined                         `json:"additionalProperties,omitempty" hcl:"additionalProperties,block"`
 	PropertyNames        *Combined                         `json:"propertyNames,omitempty" hcl:"propertyNames,block"`
-	Properties           map[string]*Combined              `json:"properties,omitempty" hcl:"properties,block"`
+	Properties           map[string]*Combined              `json:"properties" hcl:"properties,block"`
 	PatternProperties    map[string]*Combined              `json:"patternProperties,omitempty" hcl:"patternProperties,block"`
 	Dependencies         map[string]*CombinedOrStringArray `json:"dependencies,omitempty" hcl:"dependencies,block"`
 }
@@ -59,10 +60,9 @@ type SchemaObject struct {
 type Schema struct {
 	Type *StringOrStringArray `json:"type,omitempty" hcl:"type,optional"`
 	Common
-	Ref       *string          `json:"$ref,omitempty" hcl:"_ref,optional"`
-	ReadOnly  *bool            `json:"readOnly,omitempty" hcl:"readOnly,optional"`
-	WriteOnly *bool            `json:"writeOnly,omitempty" hcl:"writeOnly,optional"`
-	Examples  *json.RawMessage `json:"examples,omitempty" hcl:"examples,optional"`
+	Ref       *string `json:"$ref,omitempty" hcl:"_ref,optional"`
+	ReadOnly  *bool   `json:"readOnly,omitempty" hcl:"readOnly,optional"`
+	WriteOnly *bool   `json:"writeOnly,omitempty" hcl:"writeOnly,optional"`
 
 	SchemaNumber
 	SchemaString
@@ -78,43 +78,4 @@ type Schema struct {
 	AnyOf []*Combined `json:"anyOf,omitempty" hcl:"anyOf,block"`
 	OneOf []*Combined `json:"oneOf,omitempty" hcl:"oneOf,block"`
 	Not   *Combined   `json:"not,omitempty" hcl:"not,block"`
-}
-
-// IsIntegerOrFloat returns true if the Schema is a number
-func (s *Schema) IsIntegerOrFloat() bool {
-	return s.MultipleOf != nil || s.Maximum != nil || s.ExclusiveMaximum != nil || s.Minimum != nil || s.ExclusiveMinimum != nil
-}
-
-// IsString returns true if the Schema is a string
-func (s *Schema) IsString() bool {
-	return s.MaxLength != nil || s.MinLength != nil || s.Pattern != nil
-}
-
-// IsArray returns true if the Schema is an array
-func (s *Schema) IsArray() bool {
-	return s.AdditionalItems != nil || s.Items != nil || s.MaxItems != nil || s.MinItems != nil || s.UniqueItems != nil || s.Contains != nil
-}
-
-// IsObject returns true if the Schema is an object
-func (s *Schema) IsObject() bool {
-	return s.MaxProperties != nil || s.MinProperties != nil || s.Required != nil || s.AdditionalProperties != nil || s.PropertyNames != nil ||
-		s.Properties != nil || s.PatternProperties != nil || s.Dependencies != nil
-}
-
-// IsReference returns true if the Schema is a reference
-func (s *Schema) IsReference() bool {
-	return s.Ref != nil
-}
-
-// IsOnlyReference returns true if the Schema is a reference
-// and does not have any other properties set.
-func (s *Schema) IsOnlyReference() bool {
-	return s.Ref != nil &&
-		s.MultipleOf == nil && s.Maximum == nil && s.ExclusiveMaximum == nil && s.Minimum == nil && s.ExclusiveMinimum == nil &&
-		s.MaxLength == nil && s.MinLength == nil && s.Pattern == nil &&
-		s.AdditionalItems == nil && s.Items == nil && s.MaxItems == nil && s.MinItems == nil && s.UniqueItems == nil && s.Contains == nil &&
-		s.MaxProperties == nil && s.MinProperties == nil && s.Required == nil && s.AdditionalProperties == nil && s.PropertyNames == nil &&
-		s.Properties == nil && s.PatternProperties == nil && s.Dependencies == nil &&
-		s.Default == nil && s.ReadOnly == nil && s.WriteOnly == nil &&
-		s.Definitions == nil
 }
